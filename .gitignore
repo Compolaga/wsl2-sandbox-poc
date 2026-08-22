@@ -3,9 +3,9 @@ evidence/*
 !evidence/README.md
 
 # Lokale credentials en tijdelijke Azure-bestanden.
-.poc-token
+.sandbox-token
 *token
-.azure-wsl2-poc-wachtwoord
+.azure-wsl2-sandbox-wachtwoord
 
 __pycache__/
 *.pyc

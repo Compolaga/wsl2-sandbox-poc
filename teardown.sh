@@ -11,11 +11,11 @@ WIN_BEWIJS=""
 if [ -n "${WSL_DISTRO_NAME:-}" ] && command -v wslpath >/dev/null; then
   WIN_HOME="$(wslpath -u "$(cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r')" 2>/dev/null || true)"
   if [ -n "$WIN_HOME" ]; then
-    WIN_BEWIJS="$WIN_HOME/poc-bewijs-$(date +%Y%m%d)"
+    WIN_BEWIJS="$WIN_HOME/sandbox-bewijs-$(date +%Y%m%d)"
   fi
 fi
 if [ -z "$WIN_BEWIJS" ]; then
-  WIN_BEWIJS="$HOME/poc-bewijs-$(date +%Y%m%d)"
+  WIN_BEWIJS="$HOME/sandbox-bewijs-$(date +%Y%m%d)"
 fi
 if [ -d evidence ] && [ -n "$(ls -A evidence 2>/dev/null)" ]; then
   mkdir -p "$WIN_BEWIJS"
@@ -69,13 +69,13 @@ fi
 echo
 echo "fixture.sh --clean is klaar. Dat is geen teardown. Nog te doen, met de hand:"
 echo "  - ~/.claude/settings.json terug (VERIFICATIE.md § Opruimen)"
-echo "  - PoC-paden uit ~/.claude.json"
+echo "  - sandbox-paden uit ~/.claude.json"
 echo "  - ~/.claude/.credentials.json als je op een ander account bent ingelogd"
 echo "  - lege ~/probe-a ~/probe-b, zelf aangemaakt ~/repos, deze clone"
 echo "  - apt-cache debs; pakketten alleen weg als de beginstaat dat zegt"
 echo "  - snapshot herstellen als de distro te ver is afgeweken: herstel-snapshot.ps1"
 echo
-echo "Zelfcontrole tegen local/beginstaat/ (of ~/poc-beginstaat-*):"
+echo "Zelfcontrole tegen local/beginstaat/ (of ~/sandbox-beginstaat-*):"
 if [ -f local/beginstaat/dpkg.txt ]; then
   echo "  dpkg-was:     local/beginstaat/dpkg.txt"
   echo "  claude-was:   local/beginstaat/versies.txt"

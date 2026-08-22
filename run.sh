@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Acceptatietests voor de WSL2-sandbox PoC.
+# Acceptatietests voor de WSL2 Claude Code sandbox.
 #
 # Het script is policy-agnostisch: het toetst het gedrag van de policy die op DIT moment
 # actief is. Welke policy dat is (slice 1, 2 of 3) bepaal je door het juiste configbestand
@@ -113,7 +113,7 @@ fi
 # en met allowUnsandboxedCommands:false is dat niet te omzeilen.
 IN_VM=0
 [ -n "${WSL_DISTRO_NAME:-}" ] && IN_VM=1
-[ -n "${SANDBOX_POC_VM:-}" ]  && IN_VM=1
+[ -n "${SANDBOX_VM:-}" ]  && IN_VM=1
 if [ $IN_VM -eq 0 ]; then
   for cfg in "/Library/Application Support/ClaudeCode/managed-settings.json" \
              /etc/claude-code/managed-settings.json "$US"; do
@@ -134,7 +134,7 @@ allowUnsandboxedCommands:false kun je dat niet omzeilen.
 
   - op je eigen machine: gebruik config/managed-settings.macos-test.json (smalle deny)
   - zit je al vast:      ./unlock.sh  in een gewone terminal
-  - is dit tóch een VM:  SANDBOX_POC_VM=1 ./run.sh
+  - is dit tóch een VM:  SANDBOX_VM=1 ./run.sh
 WARN
     exit 3
   done
@@ -503,20 +503,20 @@ echo "== lockdown: de developer kan de policy niet oprekken =="
 # schrijven naar de inhoud van ~/.claude, en zou Claude het moeten doen dan mislukt de opzet
 # stil en telt "token niet gelekt" daarna als geslaagd.
 herstel() {
-  if [ -f "$US.poc.bak" ]; then mv -f "$US.poc.bak" "$US"
-  elif [ -f "$US.poc.leeg" ]; then rm -f "$US" "$US.poc.leeg"; fi
+  if [ -f "$US.sandbox.bak" ]; then mv -f "$US.sandbox.bak" "$US"
+  elif [ -f "$US.sandbox.leeg" ]; then rm -f "$US" "$US.sandbox.leeg"; fi
 }
 trap 'opruimen_tmp; herstel' EXIT INT TERM
 
 vijandig() {
-  if [ -f "$US.poc.bak" ] || [ -f "$US.poc.leeg" ]; then
-    echo "FOUT: er staat nog een backup van een eerdere run ($US.poc.*)."
+  if [ -f "$US.sandbox.bak" ] || [ -f "$US.sandbox.leeg" ]; then
+    echo "FOUT: er staat nog een backup van een eerdere run ($US.sandbox.*)."
     echo "De run stopt; de backup blijft staan zodat je hem met de hand kunt terugzetten."
     trap - EXIT INT TERM
     exit 2
   fi
   mkdir -p "$HOME/.claude"
-  if [ -f "$US" ]; then cp "$US" "$US.poc.bak"; else touch "$US.poc.leeg"; fi
+  if [ -f "$US" ]; then cp "$US" "$US.sandbox.bak"; else touch "$US.sandbox.leeg"; fi
   # Mergen, niet vervangen. Vervangen zou in slice 1 de policy zelf weghalen, en dan meet
   # AC-11r "zonder policy lekt cat" in plaats van "een eigen allowRead verbreedt de
   # whitelist" - een check die niet kan falen om de reden die eraan hangt.

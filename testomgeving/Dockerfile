@@ -1,4 +1,4 @@
-# Linux-testomgeving voor de sandbox-PoC.
+# Linux-testomgeving voor de WSL2-sandbox.
 #
 # Dit is stap A: bubblewrap-handhaving en de lock-keys toetsen zonder Windows. Wat hier
 # groen wordt geldt ook in WSL2, want die gebruikt dezelfde primitieven (bubblewrap + socat).

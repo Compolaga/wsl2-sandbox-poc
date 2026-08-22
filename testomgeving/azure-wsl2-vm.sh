@@ -17,9 +17,9 @@
 set -uo pipefail
 
 ABO="${AZ_ABONNEMENT:-}"
-GROEP="${AZ_GROEP:-rg-wsl2-sandbox-poc}"
+GROEP="${AZ_GROEP:-rg-wsl2-claude-code-sandbox}"
 LOCATIE="${AZ_LOCATIE:-westeurope}"
-VM="${AZ_VM:-vm-wsl2-poc}"
+VM="${AZ_VM:-vm-wsl2-sandbox}"
 MAAT="${AZ_MAAT:-Standard_D2s_v3}"   # v3+ = geneste virtualisatie
 # Windows Server 2022 in plaats van Windows 11: gemeten 21-08-2026 dat de win11-Pro-images
 # niet in de galerij staan (alleen AVD/M365-varianten, met licentie-eisen). Server 2022 heeft
@@ -45,11 +45,11 @@ maak)
 
   # Wachtwoord komt uit de omgeving of wordt gegenereerd; het wordt nooit afgedrukt.
   PW="${AZ_VM_WACHTWOORD:-$(LC_ALL=C tr -dc 'A-Za-z0-9!#%+=' </dev/urandom | head -c 24)Aa1!}"
-  printf '%s' "$PW" > "$HOME/.azure-wsl2-poc-wachtwoord"
-  chmod 600 "$HOME/.azure-wsl2-poc-wachtwoord"
+  printf '%s' "$PW" > "$HOME/.azure-wsl2-sandbox-wachtwoord"
+  chmod 600 "$HOME/.azure-wsl2-sandbox-wachtwoord"
 
   az vm create -g "$GROEP" -n "$VM" --image "$IMAGE" --size "$MAAT" \
-    --admin-username pocadmin --admin-password "$PW" \
+    --admin-username sandboxadmin --admin-password "$PW" \
     --public-ip-sku Standard --nsg-rule RDP -o none || exit 2
 
   # RDP alleen open voor jouw eigen IP, niet voor de hele wereld.
@@ -59,8 +59,8 @@ maak)
 
   IP="$(az vm show -d -g "$GROEP" -n "$VM" --query publicIps -o tsv)"
   echo
-  echo "Klaar. RDP naar $IP, gebruiker pocadmin."
-  echo "Wachtwoord staat in ~/.azure-wsl2-poc-wachtwoord (alleen voor jou leesbaar)."
+  echo "Klaar. RDP naar $IP, gebruiker sandboxadmin."
+  echo "Wachtwoord staat in ~/.azure-wsl2-sandbox-wachtwoord (alleen voor jou leesbaar)."
   echo "RDP staat alleen open voor $MIJN_IP."
   echo
   echo "Volgende stap, in de VM (PowerShell als admin):"
@@ -71,9 +71,9 @@ maak)
 verbind)
   IP="$(az vm show -d -g "$GROEP" -n "$VM" --query publicIps -o tsv 2>/dev/null)"
   [ -z "$IP" ] && { echo "VM niet gevonden. Eerst 'maak'."; exit 2; }
-  echo "RDP naar $IP, gebruiker pocadmin"
-  echo "Wachtwoord: cat ~/.azure-wsl2-poc-wachtwoord"
-  open "rdp://full%20address=s:$IP:3389&username=s:pocadmin" 2>/dev/null \
+  echo "RDP naar $IP, gebruiker sandboxadmin"
+  echo "Wachtwoord: cat ~/.azure-wsl2-sandbox-wachtwoord"
+  open "rdp://full%20address=s:$IP:3389&username=s:sandboxadmin" 2>/dev/null \
     || echo "Open je RDP-client met bovenstaand adres."
   ;;
 
@@ -81,7 +81,7 @@ weg)
   echo "Dit verwijdert resourcegroep '$GROEP' met alles erin, onomkeerbaar."
   read -r -p "Zeker weten? [j/N] " a; case "$a" in j|J|ja|Ja) ;; *) echo "Afgebroken."; exit 0 ;; esac
   az group delete -n "$GROEP" --yes --no-wait && echo "Verwijderen gestart."
-  rm -f "$HOME/.azure-wsl2-poc-wachtwoord"
+  rm -f "$HOME/.azure-wsl2-sandbox-wachtwoord"
   ;;
 
 *) sed -n '1,20p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;

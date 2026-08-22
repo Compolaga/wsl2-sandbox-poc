@@ -209,7 +209,7 @@ voeren.
 - Admin Console valt af: Luc is Admin, geen Owner, en wil geen org-brede policy zetten.
 - Willem rolt `managed-settings.json` al uit via Intune; daar hangt onze config in.
 - Repo's komen in `~/repos` in de distro, niet op `/mnt/c/`.
-- Voor de PoC alleen Node als toolchain; uitbreiden gebeurt bij de implementatie.
+- Voor de proef alleen Node als toolchain; uitbreiden gebeurt bij de implementatie.
 
 ## Wat Willem nu heeft
 

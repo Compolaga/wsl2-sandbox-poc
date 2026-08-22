@@ -35,7 +35,7 @@ ln -sfn $DH/probe-a/bestand.txt $DH/repos/probe-7f3a91b2/omweg.lnk
 python3 - "$DH" <<'PY'
 import json, sys
 dh = sys.argv[1]
-fs = json.load(open("/mnt/c/poc/slice1.json"))["sandbox"]["filesystem"]
+fs = json.load(open("/mnt/c/sandbox/slice1.json"))["sandbox"]["filesystem"]
 # ~/ resolvet voor srt naar de home van wie hem aanroept; expliciet maken zodat de meting
 # niet afhangt van hoe de tilde geinterpreteerd wordt.
 def fix(l): return [str(p).replace("~/", dh + "/") for p in l]
@@ -104,7 +104,7 @@ echo
 
 echo "=== AC-14 zonder bwrap weigert Claude Code te starten ==="
 echo "  (managed heeft failIfUnavailable: true)"
-cp /mnt/c/poc/geen-versie-eis.json "$W" 2>/dev/null && echo "  versie-eis tijdelijk weg, zodat AC-14 niet daarop afgaat"
+cp /mnt/c/sandbox/geen-versie-eis.json "$W" 2>/dev/null && echo "  versie-eis tijdelijk weg, zodat AC-14 niet daarop afgaat"
 mv /usr/bin/bwrap /usr/bin/bwrap.uit 2>/dev/null
 printf '  AC-14  %-40s ' "bwrap weggehaald"
 out="$(sudo -u $DEV claude -p 'zeg OK' 2>&1 | head -3)"

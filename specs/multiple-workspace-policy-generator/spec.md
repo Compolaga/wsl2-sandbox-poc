@@ -2,7 +2,7 @@
 
 ## Why
 
-Een Windows-laptop mag niet ongemerkt de vaste PoC-aanname `~/repos` overnemen. De gebruiker
+Een Windows-laptop mag niet ongemerkt de vaste standaardaanname `~/repos` overnemen. De gebruiker
 kiest eerst één of meer toegestane WSL-workspaces en de beschermde uitzonderingen; pas daarna
 mag een testpayload ontstaan.
 
@@ -38,7 +38,7 @@ De policygenerator draait met het intakebestand en een lokaal uitvoerpad.
   `allowManagedDomainsOnly` en `wslInheritsWindowsSettings` behouden hun veilige waarden.
 - De gegenereerde payload slaagt voor `check-configs.sh`.
 - Een tweede generatie naar hetzelfde pad faalt zonder `--force`.
-- `~/repos` blijft in `allowRead` en `allowWrite` staan voor de PoC-fixtures.
+- `~/repos` blijft in `allowRead` en `allowWrite` staan voor de testfixtures.
 - Een intake zonder `confirmed: true` of zonder `askedVia` faalt zonder uitvoerbestand.
 - `/mnt` als workspace faalt tenzij zowel `allowWindowsMounts` als
   `allowWindowsMountsConfirmed` true zijn.

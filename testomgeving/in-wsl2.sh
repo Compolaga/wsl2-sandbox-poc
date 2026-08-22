@@ -2,14 +2,14 @@
 # Draai dit IN de WSL2-distro, op de Windows-machine. Dit is stap B: de vier dingen die
 # alleen daar te meten zijn.
 #
-# Kopieer eerst de hele poc-map naar de distro, bijvoorbeeld:
-#   git clone <of> scp -r wsl2-sandbox-poc/ gebruiker@machine:~/
+# Kopieer eerst de hele repo-map naar de distro, bijvoorbeeld:
+#   git clone <of> scp -r wsl2-claude-code-sandbox/ gebruiker@machine:~/
 #
 #   ./in-wsl2.sh voorbereiden   afhankelijkheden installeren en controleren
 #   ./in-wsl2.sh meet           de vier WSL-specifieke metingen
 set -uo pipefail
 cd "$(dirname "$0")/.."
-POC="$(pwd)"
+sandbox="$(pwd)"
 WINCFG="/mnt/c/Program Files/ClaudeCode/managed-settings.json"
 
 case "${1:-meet}" in
@@ -60,7 +60,7 @@ meet)
   [ -n "${WSL_DISTRO_NAME:-}" ] || { echo "FOUT: dit is geen WSL2-distro."; exit 2; }
   claude auth status >/dev/null 2>&1 \
     || { echo "FOUT: Claude is niet ingelogd. Draai eerst 'claude auth login'."; exit 2; }
-  D="$POC/evidence/wsl2-$(date +%Y%m%d-%H%M%S)"; mkdir -p "$D"
+  D="$sandbox/evidence/wsl2-$(date +%Y%m%d-%H%M%S)"; mkdir -p "$D"
   exec > >(tee "$D/wsl2.txt") 2>&1
 
   echo "WSL-SPECIFIEKE METINGEN"
@@ -105,6 +105,6 @@ meet)
   echo "  seccomp-filter: $(npm ls -g @anthropic-ai/sandbox-runtime 2>/dev/null | sed -n 2p | sed 's/[^@]*@/@/')"
   echo "  Zie AC-24 in de run hierboven."
   echo
-  echo "bewijs: ${D#$POC/}/wsl2.txt"
+  echo "bewijs: ${D#$sandbox/}/wsl2.txt"
   ;;
 esac

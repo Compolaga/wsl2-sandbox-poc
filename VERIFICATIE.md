@@ -14,7 +14,7 @@ komen naast de fixtures in de gegenereerde payload. De policy blokkeert `/mnt/`.
 
 ## Voorbereiden
 
-In de distro, als de developer, vanuit de root van deze PoC-map:
+In de distro, als de developer, vanuit de root van deze repomap:
 
 ```bash
 ./fixture.sh
@@ -23,7 +23,7 @@ printf 'Windows-testpad in WSL: /mnt/c/Users/%s/Documents/bestand.txt\n' "$WU"
 printf 'Windows-testpad voor cmd.exe: C:\\Users\\%s\\Documents\\bestand.txt\n' "$WU"
 ```
 
-`fixture.sh` stopt bij een bestaand pad dat niet van de PoC is en overschrijft dus geen
+`fixture.sh` stopt bij een bestaand pad dat niet van de proef is en overschrijft dus geen
 eigen bestanden. Als je de veilige proefroute uit de handoff volgt, staat de policy hier al.
 Zo niet: zet hem nu neer, draai `wsl --shutdown` vanuit PowerShell en open de distro opnieuw.
 
@@ -60,17 +60,17 @@ niet. Dat is geen vervanging van de twaalf fixture-stappen hierboven.
 ## Dat de developer er niet omheen kan
 
 Dit is het verschil tussen een vangnet en een grens. Bewaar eerst bestaande user-settings;
-de commando's stoppen als een oude PoC-backup in de weg staat:
+de commando's stoppen als een oude proef-backup in de weg staat:
 
 ```bash
 mkdir -p ~/.claude
-[ ! -e ~/.claude/settings.json.before-sandbox-poc ] || {
+[ ! -e ~/.claude/settings.json.before-sandbox ] || {
   echo "STOP: oude backup bestaat al"; return 1 2>/dev/null || exit 1
 }
 if [ -e ~/.claude/settings.json ]; then
-  cp -p ~/.claude/settings.json ~/.claude/settings.json.before-sandbox-poc
+  cp -p ~/.claude/settings.json ~/.claude/settings.json.before-sandbox
 else
-  touch ~/.claude/.sandbox-poc-had-no-settings
+  touch ~/.claude/.sandbox-had-no-settings
 fi
 echo '{"sandbox":{"enabled":false}}' > ~/.claude/settings.json
 ```
@@ -95,19 +95,19 @@ de laptopproef. Die volgorde — eerst de policy weg, dan pas de rest — staat 
 gaan zolang de Windows-policy nog een sandbox eist.
 
 ```bash
-if [ -e ~/.claude/.sandbox-poc-had-no-settings ]; then
-  rm -f ~/.claude/settings.json ~/.claude/.sandbox-poc-had-no-settings
-elif [ -e ~/.claude/settings.json.before-sandbox-poc ]; then
-  mv ~/.claude/settings.json.before-sandbox-poc ~/.claude/settings.json
+if [ -e ~/.claude/.sandbox-had-no-settings ]; then
+  rm -f ~/.claude/settings.json ~/.claude/.sandbox-had-no-settings
+elif [ -e ~/.claude/settings.json.before-sandbox ]; then
+  mv ~/.claude/settings.json.before-sandbox ~/.claude/settings.json
 else
   echo "Geen user-settings-backup gevonden; lockdownproef waarschijnlijk overgeslagen."
 fi
 ./fixture.sh --clean
 ```
 
-Controleer dat `settings.json.before-sandbox-poc` en `.sandbox-poc-had-no-settings` daarna
+Controleer dat `settings.json.before-sandbox` en `.sandbox-had-no-settings` daarna
 niet meer bestaan. `fixture.sh --clean` verwijdert alleen bestanden met de eigen
-PoC-markering; onbekende bestanden en mappen blijven staan.
+sandbox-markering; onbekende bestanden en mappen blijven staan.
 
 ## Waarom er twee routes zijn
 

@@ -1,4 +1,4 @@
-# WSL2-sandbox PoC — bewijzen dat ZET-developers klantdata niet via Claude Code kunnen lezen
+# WSL2 Claude Code sandbox — bewijzen dat ZET-developers klantdata niet via Claude Code kunnen lezen
 
 Doel: één omgeving waarin aantoonbaar is dat beschermde paden **via Bash en zijn
 subprocessen** langs geen enkele route leesbaar zijn, dat de expliciet genoemde paden ook
@@ -62,13 +62,13 @@ organisatiekeuze.
 | `/tmp` schrijfbaar in de sandbox | elke Bash-probe schrijft daarheen; AC-00p toetst het en breekt de run af als het niet kan |
 | Claude Code, recente versie | `allowManagedReadPathsOnly`, `allowManagedDomainsOnly` en `wslInheritsWindowsSettings` hebben elk een minimumversie; controleer ze in de [settings-documentatie](https://code.claude.com/docs/en/settings) tegen `claude --version` |
 | `python3` | de preflights lezen de configs ermee uit; zonder hem weigert `run.sh` te starten |
-| Repo's in de bevestigde Linux-workspaces | de policy zet `/mnt/` dicht; Windows-mappen eerst kopiëren met `bring-workspace.sh`. `~/repos` blijft alleen voor PoC-fixtures |
+| Repo's in de bevestigde Linux-workspaces | de policy zet `/mnt/` dicht; Windows-mappen eerst kopiëren met `bring-workspace.sh`. `~/repos` blijft alleen voor testfixtures |
 
 ## Jezelf niet buitensluiten
 
 De configs voor slice 1, 2 en 3 horen in een VM of in een **gecontroleerde proef op een
 aparte Windows-testlaptop**, niet onaangekondigd op een dagelijkse werkmachine. Ze bevatten
-`denyRead: ["~/"]`: alles dicht behalve de bevestigde workspaces en de PoC-fixtures onder
+`denyRead: ["~/"]`: alles dicht behalve de bevestigde workspaces en de testfixtures onder
 `~/repos`. Op een gewone laptop betekent dat dat
 Claude Code niet meer bij andere mappen in de Linux-home of bij `/mnt/` kan — en met
 `allowUnsandboxedCommands: false` kun je dat niet omzeilen. Regel vóór plaatsing een
@@ -80,7 +80,7 @@ proef.
 Drie dingen vangen dat af:
 
 1. **`run.sh` weigert te starten** bij een brede `denyRead` buiten een VM. Overrulen kan met
-   `SANDBOX_POC_VM=1`.
+   `SANDBOX_VM=1`.
 2. **`config/managed-settings.macos-test.json`** is de veilige variant voor je eigen Mac.
    Draai
    na het installeren éérst `./run.sh AC-20` en pas daarna de rest: dat toetst OQ-8, de

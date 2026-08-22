@@ -6,9 +6,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 if (-not $Tar) {
-    $dir = Join-Path $env:USERPROFILE "poc-snapshots"
+    $dir = Join-Path $env:USERPROFILE "wsl2-sandbox-snapshots"
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
-    $Tar = Join-Path $dir "$Distro-voor-poc.tar"
+    $Tar = Join-Path $dir "$Distro-voor-sandbox.tar"
 }
 
 if (Test-Path -LiteralPath $Tar) {

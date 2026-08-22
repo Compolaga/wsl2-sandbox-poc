@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ronde 2 van de ingelogde meting in de bestaande Azure-VM (vm3 / rg-wsl2-poc3).
+# Ronde 2 van de ingelogde meting in de bestaande Azure-VM (vm3 / rg-wsl2-sandbox3).
 #
 # Waarom dit script bestaat: de agent mag jouw API-token niet aanraken of versturen.
 # Alles wat met de token gebeurt, gebeurt dus hier, onder jouw hand, en is hieronder
@@ -11,12 +11,12 @@
 # commandoregel. Die zit nu in een scriptbestand; de markers zijn ongewijzigd.
 #
 # Gebruik:
-#   ./ronde2-meting.sh ~/.poc-token            # meten, VM laten staan
-#   ./ronde2-meting.sh ~/.poc-token --afbreken # meten en daarna de resourcegroep slopen
-#   ./ronde2-meting.sh ~/.poc-token "" AC-00p  # alleen één AC meten (diagnostiek)
+#   ./ronde2-meting.sh ~/.sandbox-token            # meten, VM laten staan
+#   ./ronde2-meting.sh ~/.sandbox-token --afbreken # meten en daarna de resourcegroep slopen
+#   ./ronde2-meting.sh ~/.sandbox-token "" AC-00p  # alleen één AC meten (diagnostiek)
 #
 # Over de token, eerlijk en volledig:
-#   1. inner2.sh doet `rm -f /mnt/c/poc/token` direct na het inlezen, dus het bestand
+#   1. inner2.sh doet `rm -f /mnt/c/sandbox/token` direct na het inlezen, dus het bestand
 #      staat er seconden. Tijdens de run zit de token alleen in de omgeving van het
 #      proces, niet op schijf.
 #   2. `az group delete` gooit VM, OS-schijf en NIC weg. Wat op die schijf stond —
@@ -35,13 +35,13 @@ set -uo pipefail
 TOKEN_PAD="${1:-}"
 AFBREKEN="${2:-}"
 FILTER="${3:-}"
-RG="rg-wsl2-poc3"
+RG="rg-wsl2-sandbox3"
 VM="vm3"
 
 rood() { printf '\033[31m%s\033[0m\n' "$*"; }
 groen() { printf '\033[32m%s\033[0m\n' "$*"; }
 
-[ -n "$TOKEN_PAD" ] || { rood "FOUT: geef het pad naar je tokenbestand mee, bv. ~/.poc-token"; exit 2; }
+[ -n "$TOKEN_PAD" ] || { rood "FOUT: geef het pad naar je tokenbestand mee, bv. ~/.sandbox-token"; exit 2; }
 [ -s "$TOKEN_PAD" ] || { rood "FOUT: $TOKEN_PAD bestaat niet of is leeg"; exit 2; }
 [ -z "$FILTER" ] || [[ "$FILTER" =~ ^AC-[0-9]+[a-z]?$ ]] \
   || { rood "FOUT: filter moet leeg zijn of een AC-id, bijvoorbeeld AC-00p"; exit 2; }
@@ -72,41 +72,41 @@ tar czf "$WERK/pakket.tgz" -C "$ROOT" \
 # ---------------------------------------------------------------- distro-script
 cat > "$WERK/inner2.sh" <<'INNER'
 #!/bin/bash
-exec > /mnt/c/poc/distro2.log 2>&1
+exec > /mnt/c/sandbox/distro2.log 2>&1
 set -x
-rm -rf /home/dev/poc && mkdir -p /home/dev/poc
-tar xzf /mnt/c/poc/pakket.tgz -C /home/dev/poc
-chown -R dev:dev /home/dev/poc
-chmod +x /home/dev/poc/*.sh
-if [ ! -s /mnt/c/poc/token ]; then echo "GEEN-TOKEN"; exit 3; fi
-TOK="$(tr -d ' \r\n' < /mnt/c/poc/token)"
-rm -f /mnt/c/poc/token          # token van schijf af, meteen na inlezen
+rm -rf /home/dev/repo && mkdir -p /home/dev/repo
+tar xzf /mnt/c/sandbox/pakket.tgz -C /home/dev/repo
+chown -R dev:dev /home/dev/repo
+chmod +x /home/dev/repo/*.sh
+if [ ! -s /mnt/c/sandbox/token ]; then echo "GEEN-TOKEN"; exit 3; fi
+TOK="$(tr -d ' \r\n' < /mnt/c/sandbox/token)"
+rm -f /mnt/c/sandbox/token          # token van schijf af, meteen na inlezen
 sudo -u dev env CLAUDE_CODE_OAUTH_TOKEN="$TOK" HOME=/home/dev bash -lc '
-  cd ~/poc
-  ./fixture.sh > /mnt/c/poc/fixture.out 2>&1
-  FILTER="$(tr -d " \r\n" < /mnt/c/poc/filter)"
+  cd ~/repo
+  ./fixture.sh > /mnt/c/sandbox/fixture.out 2>&1
+  FILTER="$(tr -d " \r\n" < /mnt/c/sandbox/filter)"
   if [ -n "$FILTER" ]; then
-    ./run.sh "$FILTER" > /mnt/c/poc/run.out 2>&1
+    ./run.sh "$FILTER" > /mnt/c/sandbox/run.out 2>&1
   else
-    ./run.sh           > /mnt/c/poc/run.out 2>&1
+    ./run.sh           > /mnt/c/sandbox/run.out 2>&1
   fi
-  echo "RUN-RC=$?" >> /mnt/c/poc/run.out
+  echo "RUN-RC=$?" >> /mnt/c/sandbox/run.out
   laatste=$(ls -dt evidence/*/ 2>/dev/null | head -1)
-  echo "EVIDENCEMAP=$laatste" >> /mnt/c/poc/run.out
-  [ -n "$laatste" ] && tar czf /mnt/c/poc/evidence.tgz -C evidence "$(basename "$laatste")"
+  echo "EVIDENCEMAP=$laatste" >> /mnt/c/sandbox/run.out
+  [ -n "$laatste" ] && tar czf /mnt/c/sandbox/evidence.tgz -C evidence "$(basename "$laatste")"
 '
 echo "SUITE-KLAAR"
 INNER
 
 # ------------------------------------------------------- windows-kant (als user)
-# Deze taak moet als pocadmin lopen: WSL weigert onder SYSTEM, en dat is precies
+# Deze taak moet als sandboxadmin lopen: WSL weigert onder SYSTEM, en dat is precies
 # waar run-command in draait. Vandaar de geplande taak.
 cat > "$WERK/als-gebruiker.ps1" <<'PS1'
 $ErrorActionPreference='Continue'
-function Log($m){ "$(Get-Date -f HH:mm:ss) $m" | Out-File C:\poc\progress.log -Append -Encoding utf8 }
+function Log($m){ "$(Get-Date -f HH:mm:ss) $m" | Out-File C:\sandbox\progress.log -Append -Encoding utf8 }
 Log "ronde2 start als $env:USERNAME"
 Log ("distros=" + ((& wsl.exe -l -q 2>&1 | Out-String) -replace "`0","" -replace "\s+"," "))
-& wsl.exe -d poc -u root -- bash /mnt/c/poc/inner2.sh 2>&1 | Out-File C:\poc\progress.log -Append -Encoding utf8
+& wsl.exe -d sandbox -u root -- bash /mnt/c/sandbox/inner2.sh 2>&1 | Out-File C:\sandbox\progress.log -Append -Encoding utf8
 Log "ronde2 klaar"
 PS1
 
@@ -121,25 +121,25 @@ T="$(b64 "$WERK/token")"
 
 echo "1/4 scripts en token naar de VM, en de oude uitvoer opruimen"
 az vm run-command invoke -g "$RG" -n "$VM" --command-id RunPowerShellScript --scripts "
-Remove-Item C:\poc\run.out,C:\poc\fixture.out,C:\poc\evidence.tgz,C:\poc\distro2.log -Force -ErrorAction SilentlyContinue
-[IO.File]::WriteAllBytes('C:\poc\inner2.sh',[Convert]::FromBase64String('$I'))
-[IO.File]::WriteAllBytes('C:\poc\als-gebruiker.ps1',[Convert]::FromBase64String('$P'))
-[IO.File]::WriteAllBytes('C:\poc\pakket.tgz',[Convert]::FromBase64String('$Q'))
-[IO.File]::WriteAllBytes('C:\poc\filter',[Convert]::FromBase64String('$F'))
-[IO.File]::WriteAllBytes('C:\poc\token',[Convert]::FromBase64String('$T'))
-'geplaatst: ' + ((Get-ChildItem C:\poc\inner2.sh,C:\poc\als-gebruiker.ps1,C:\poc\pakket.tgz,C:\poc\filter,C:\poc\token | Measure-Object).Count) + ' bestanden'
+Remove-Item C:\sandbox\run.out,C:\sandbox\fixture.out,C:\sandbox\evidence.tgz,C:\sandbox\distro2.log -Force -ErrorAction SilentlyContinue
+[IO.File]::WriteAllBytes('C:\sandbox\inner2.sh',[Convert]::FromBase64String('$I'))
+[IO.File]::WriteAllBytes('C:\sandbox\als-gebruiker.ps1',[Convert]::FromBase64String('$P'))
+[IO.File]::WriteAllBytes('C:\sandbox\pakket.tgz',[Convert]::FromBase64String('$Q'))
+[IO.File]::WriteAllBytes('C:\sandbox\filter',[Convert]::FromBase64String('$F'))
+[IO.File]::WriteAllBytes('C:\sandbox\token',[Convert]::FromBase64String('$T'))
+'geplaatst: ' + ((Get-ChildItem C:\sandbox\inner2.sh,C:\sandbox\als-gebruiker.ps1,C:\sandbox\pakket.tgz,C:\sandbox\filter,C:\sandbox\token | Measure-Object).Count) + ' bestanden'
 " --query "value[0].message" -o tsv | tail -3
 rm -f "$WERK/token"
 
-echo "2/4 taak starten (draait als pocadmin, niet als SYSTEM)"
+echo "2/4 taak starten (draait als sandboxadmin, niet als SYSTEM)"
 az vm run-command invoke -g "$RG" -n "$VM" --command-id RunPowerShellScript \
-  --scripts "schtasks /run /tn PocWsl | Out-String" --query "value[0].message" -o tsv | tail -2
+  --scripts "schtasks /run /tn SandboxWsl | Out-String" --query "value[0].message" -o tsv | tail -2
 
 echo "3/4 wachten op de uitslag (max 20 min, peiling elke 90 s)"
 for i in $(seq 1 14); do
   sleep 90
   UIT="$(az vm run-command invoke -g "$RG" -n "$VM" --command-id RunPowerShellScript \
-        --scripts "if ((Test-Path C:\poc\run.out) -and (Select-String -Path C:\poc\run.out -Pattern '^RUN-RC=' -Quiet)) { 'KLAAR'; Get-Content C:\poc\run.out -Tail 6 } else { 'BEZIG'; if (Test-Path C:\poc\run.out) { Get-Content C:\poc\run.out -Tail 6 } else { Get-Content C:\poc\progress.log -Tail 2 } }" \
+        --scripts "if ((Test-Path C:\sandbox\run.out) -and (Select-String -Path C:\sandbox\run.out -Pattern '^RUN-RC=' -Quiet)) { 'KLAAR'; Get-Content C:\sandbox\run.out -Tail 6 } else { 'BEZIG'; if (Test-Path C:\sandbox\run.out) { Get-Content C:\sandbox\run.out -Tail 6 } else { Get-Content C:\sandbox\progress.log -Tail 2 } }" \
         --query "value[0].message" -o tsv 2>/dev/null)"
   echo "--- peiling $i"; echo "$UIT" | tail -6
   case "$UIT" in *KLAAR*) break;; esac
@@ -148,9 +148,9 @@ done
 echo "4/4 bewijs ophalen"
 cd "$(dirname "$0")/.." || exit 1
 az vm run-command invoke -g "$RG" -n "$VM" --command-id RunPowerShellScript \
-  --scripts "Get-Content C:\poc\run.out -Raw" --query "value[0].message" -o tsv > "$WERK/run.out" 2>/dev/null
+  --scripts "Get-Content C:\sandbox\run.out -Raw" --query "value[0].message" -o tsv > "$WERK/run.out" 2>/dev/null
 if az vm run-command invoke -g "$RG" -n "$VM" --command-id RunPowerShellScript \
-     --scripts "if (Test-Path C:\poc\evidence.tgz) { [Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\poc\evidence.tgz')) }" \
+     --scripts "if (Test-Path C:\sandbox\evidence.tgz) { [Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\sandbox\evidence.tgz')) }" \
      --query "value[0].message" -o tsv 2>/dev/null | grep -v '^\[std' | tr -d ' \n' > "$WERK/ev.b64" \
    && [ -s "$WERK/ev.b64" ]; then
   base64 -d -i "$WERK/ev.b64" -o "$WERK/ev.tgz" && tar xzf "$WERK/ev.tgz" -C evidence \

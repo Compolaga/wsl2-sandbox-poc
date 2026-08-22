@@ -24,7 +24,7 @@ RUNTIME_READ = (
     "~/.npm",
     "~/.gitconfig",
 )
-# Fixtures van de PoC-suite blijven leesbaar naast de gekozen workspaces.
+# Fixtures van de testsuite blijven leesbaar naast de gekozen workspaces.
 FIXTURE_READ = ("~/repos",)
 FIXTURE_WRITE = ("~/repos",)
 SYSTEM_ROOTS = {"/", "/home", "/root", "/usr", "/bin", "/sbin", "/lib", "/lib64", "/etc", "/opt", "/proc", "/dev"}

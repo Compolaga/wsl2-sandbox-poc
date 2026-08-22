@@ -6,7 +6,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 if (-not $Log) {
-    $logDir = Join-Path $env:USERPROFILE "poc-snapshots"
+    $logDir = Join-Path $env:USERPROFILE "wsl2-sandbox-snapshots"
     New-Item -ItemType Directory -Force -Path $logDir | Out-Null
     $Log = Join-Path $logDir "rollback.log"
 }
@@ -14,8 +14,8 @@ Start-Transcript -Path $Log -Append | Out-Null
 try {
     $p = Join-Path $env:ProgramFiles "ClaudeCode\managed-settings.json"
     $dir = Split-Path -Parent $p
-    $b = "$p.before-wsl2-poc"
-    $n = "$p.no-original-before-wsl2-poc"
+    $b = "$p.before-wsl2-sandbox"
+    $n = "$p.no-original-before-wsl2-sandbox"
     $hadOriginal = $false
 
     if (Test-Path -LiteralPath $b) {
@@ -30,7 +30,7 @@ try {
         Write-Host "verwijderd: $p (er was geen origineel)"
     }
     else {
-        throw "FOUT: geen PoC-rollbackbestand of -marker gevonden"
+        throw "FOUT: geen sandbox-rollbackbestand of -marker gevonden"
     }
 
     if ((Test-Path -LiteralPath $dir) -and -not (Get-ChildItem $dir -Force)) {
@@ -44,7 +44,7 @@ try {
         if (-not (Test-Path -LiteralPath $p)) { throw "FOUT: origineel $p is niet teruggezet" }
     }
     else {
-        if (Test-Path -LiteralPath $p) { throw "FOUT: PoC-payload $p staat er nog" }
+        if (Test-Path -LiteralPath $p) { throw "FOUT: sandbox-payload $p staat er nog" }
     }
 
     Write-Host "rollback-selfcheck OK"

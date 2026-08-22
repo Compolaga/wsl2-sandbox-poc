@@ -10,12 +10,12 @@ Voor een macOS-proef komt **OQ-8 als eerste aan de beurt** — verkeerd gokken s
 direct buiten. OQ-8 raakt de Windows-payload niet, omdat die een expliciete `allowRead`
 heeft. **OQ-6** is geen technische onzekerheid maar een beslissing die Willem voor uitrol
 moet nemen, en staat daarom in de vrijgavepoort van de README. OQ-7 moet op een nieuwe
-doellaptop als regressiecontrole worden herhaald, maar de PoC-vraag zelf is beantwoord.
+doellaptop als regressiecontrole worden herhaald, maar de onderzoeksvraag zelf is beantwoord.
 
 | # | Vraag | Stand |
 |---|---|---|
-| OQ-1 | Waar staat de geïnventariseerde gevoelige data? | **Uitgesteld** tot de implementatie. Eigenaar: Luc en Willem samen. Voor de PoC niet nodig — de fixture plant canaries op alle kandidaat-locaties — maar tot dit beantwoord is beschermt de policy fixture-paden, niet de echte. |
-| OQ-2 | Welke toolchains gebruiken ZET-developers? | **Uitgesteld** tot de implementatie. Eigenaar: Willem. Luc gaf 21-08 aan: bijna allemaal, PoC doet alleen Node. `allowRead` en `allowedDomains` zijn daarop teruggebracht. |
+| OQ-1 | Waar staat de geïnventariseerde gevoelige data? | **Uitgesteld** tot de implementatie. Eigenaar: Luc en Willem samen. Voor de proef niet nodig — de fixture plant canaries op alle kandidaat-locaties — maar tot dit beantwoord is beschermt de policy fixture-paden, niet de echte. |
+| OQ-2 | Welke toolchains gebruiken ZET-developers? | **Uitgesteld** tot de implementatie. Eigenaar: Willem. Luc gaf 21-08 aan: bijna allemaal, proef doet alleen Node. `allowRead` en `allowedDomains` zijn daarop teruggebracht. |
 | OQ-3 | Wat staat er nú in Willems `managed-settings.json`? | **Beantwoord** 21-08 via screenshot. Zie [decisions.md](decisions.md), "Wat Willem nu heeft". |
 | OQ-4 | Welke Claude Code-versie rolt ZET uit? | **Beantwoord** door Luc, 21-08: latest. Of elke gebruikte key in die versie zit is niet nagetrokken — A10 in de handoff draagt Willem op dat per key in de documentatie te doen. |
 | OQ-5 | Hoe blokkeer je MCP in WSL2? | **Opgelost.** Via settings-keys in plaats van `managed-mcp.json` — die route is gemeten. Zie hieronder. |

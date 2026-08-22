@@ -93,7 +93,7 @@ niet:
 ./bring-workspace.sh 'C:\Users\naam\src\project' /home/<user>/work/project
 ```
 
-`~/repos` blijft in de payload staan voor de PoC-fixtures. Gebruik hem nooit als
+`~/repos` blijft in de payload staan voor de testfixtures. Gebruik hem nooit als
 organisatiekeuze.
 
 ### Vraag 3 — policy plaatsen
@@ -129,7 +129,7 @@ Pas die tweede laptop, plus OQ-1 en OQ-6, maakt dit uitrolklaar. Eén groene `ru
 Deze route is bedoeld om de handoff lokaal te proberen **vóór** Intune. Gebruik een
 testlaptop of een laptop waarop tijdelijk verlies van Claude-toegang acceptabel is. De
 Windows-config zet in WSL vrijwel de hele Linux-home en `/mnt/` dicht. Repo's werken alleen
-in de **bevestigde Linux-workspaces** plus de PoC-fixtures onder `~/repos`. Een Windows-map
+in de **bevestigde Linux-workspaces** plus de testfixtures onder `~/repos`. Een Windows-map
 die je niet hebt gekopieerd, is daarna onbruikbaar.
 
 De policy-rollback is niet de machine-rollback. Op 22-08-2026 slaagde de proef (22/22 groen)
@@ -168,9 +168,9 @@ proef.** Dat is geen aanbeveling.
 
    ```powershell
    $p = "$env:ProgramFiles\ClaudeCode\managed-settings.json"
-   $b = "$p.before-wsl2-poc"
-   $n = "$p.no-original-before-wsl2-poc"
-   if ((Test-Path $b) -or (Test-Path $n)) { throw "Oude PoC-rollbackmarker bestaat al" }
+   $b = "$p.before-wsl2-sandbox"
+   $n = "$p.no-original-before-wsl2-sandbox"
+   if ((Test-Path $b) -or (Test-Path $n)) { throw "Oude sandbox-rollbackmarker bestaat al" }
    if (Test-Path $p) { Copy-Item $p $b } else { New-Item $n -ItemType File | Out-Null }
    ```
 
@@ -257,7 +257,7 @@ dat het plan — bij elke aanname staat wat er dan moet gebeuren.
 | A7 | Repo's staan in de **bevestigde Linux-workspaces** (vaak onder `~/work`, niet per se `~/repos`) | AskUserQuestion; daarna `bring-workspace.sh` (copy) voor Windows-mappen | De policy zet `/mnt/` dicht. Een Windows-repo blijft onbruikbaar tot hij is gekopieerd naar een Linux-pad. Bind alleen na een tweede ja. Symlink naar `/mnt/c` is geen oplossing. |
 | A8 | Uitgaand verkeer heeft **geen bedrijfsproxy** nodig | `echo $HTTPS_PROXY` in de distro | Met een proxy hoort `HTTPS_PROXY`/`NO_PROXY` in het `env`-blok van de managed settings, anders breekt de sandbox-egress. |
 | A9 | Jullie **interne package-feeds** staan in `allowedDomains` | vergelijk je NuGet/npm-config met de lijst in de config | Ontbreekt de Azure DevOps artifact-feed, dan breekt `dotnet restore` binnen de sandbox. Vul aan vóór uitrol. |
-| A10 | Claude Code is een **recente versie** en gebruikt geen third-party provider | `claude --version`; `echo $ANTHROPIC_BASE_URL $CLAUDE_CODE_USE_BEDROCK`; lees de minimumversies van `allowManagedReadPathsOnly`, `allowManagedDomainsOnly` en `wslInheritsWindowsSettings` in de [settings-documentatie](https://code.claude.com/docs/en/settings) | Een te oude versie is een **bevinding, geen klusje**. Rapporteer hem en stop, of upgrade bewust en noteer dat als ingreep. Een stille upgrade van 1.0.35 naar 2.1.240 veegde op 22-08-2026 `~/.claude/todos`, `projects` en `statsig` leeg via retentie (`cleanupPeriodDays` in Willems bestand). Vóór elke upgrade: `cp -a ~/.claude ~/.claude.voor-poc` en `cp -p ~/.claude.json ~/.claude.json.voor-poc`. Een third-party provider verandert hoe settings geladen worden. |
+| A10 | Claude Code is een **recente versie** en gebruikt geen third-party provider | `claude --version`; `echo $ANTHROPIC_BASE_URL $CLAUDE_CODE_USE_BEDROCK`; lees de minimumversies van `allowManagedReadPathsOnly`, `allowManagedDomainsOnly` en `wslInheritsWindowsSettings` in de [settings-documentatie](https://code.claude.com/docs/en/settings) | Een te oude versie is een **bevinding, geen klusje**. Rapporteer hem en stop, of upgrade bewust en noteer dat als ingreep. Een stille upgrade van 1.0.35 naar 2.1.240 veegde op 22-08-2026 `~/.claude/todos`, `projects` en `statsig` leeg via retentie (`cleanupPeriodDays` in Willems bestand). Vóór elke upgrade: `cp -a ~/.claude ~/.claude.voor-sandbox` en `cp -p ~/.claude.json ~/.claude.json.voor-sandbox`. Een third-party provider verandert hoe settings geladen worden. |
 | A11 | `python3` en `node` zijn aanwezig in de distro | `python3 --version`, `node --version` | De preflights lezen de configs met python; de acceptatietests bouwen met node. Zonder deze weigert `run.sh` te starten of slaat hij tests over. |
 
 **A4 op WSL2: waarschijnlijk niets te doen, maar meet het.** Op 21-08-2026 gemeten: in WSL2
@@ -459,14 +459,14 @@ upgrades, weggevaagde `~/.claude/`-historie, een vervangen auth-koppeling, groei
 `~/.claude/`, en een distro die materieel een andere machine is. Met snapshot:
 
 ```powershell
-.\herstel-snapshot.ps1 -Distro Ubuntu -Tar $HOME\poc-snapshots\Ubuntu-voor-poc.tar -Bevestig
+.\herstel-snapshot.ps1 -Distro Ubuntu -Tar $HOME\wsl2-sandbox-snapshots\Ubuntu-voor-sandbox.tar -Bevestig
 ```
 
 ### `fixture.sh --clean` is geen teardown
 
 Na `--clean` bleven op 22-08 onder meer staan: lege `~/probe-a` en `~/probe-b`, een zelf
 aangemaakte `~/repos`, de clone inclusief `evidence/`, `~/.config/git/ignore`, extra mappen
-onder `~/.claude/` (sessions, cache, `.credentials.json` met een live token), PoC-paden in
+onder `~/.claude/` (sessions, cache, `.credentials.json` met een live token), sandbox-paden in
 `~/.claude.json`, en debs in `/var/cache/apt/archives/`. Geen daarvan is dramatisch. Bij
 elkaar zijn ze het verschil tussen "opgeruimd" en opgeruimd.
 
@@ -485,7 +485,7 @@ elkaar zijn ze het verschil tussen "opgeruimd" en opgeruimd.
 ### Laat ook het opruimen weerleggen
 
 Een agent die "teardown voltooid" meldt, miste op 22-08 onder meer de markerfile
-`.no-original-before-wsl2-poc`, een live token, PoC-paden in `~/.claude.json` en 167 apt-
+`.no-original-before-wsl2-sandbox`, een live token, sandbox-paden in `~/.claude.json` en 167 apt-
 upgrades (gerapporteerd als "diverse"). Geef de falsifier de map uit `./inventaris.sh`.
 Zonder die referentie is teardown giswerk.
 

@@ -13,15 +13,15 @@
 #   ./meet-bubblewrap.sh --geen-bewijs  alleen op het scherm
 set -uo pipefail
 cd "$(dirname "$0")/.."
-POC="$(pwd)"
+sandbox="$(pwd)"
 
 command -v docker >/dev/null || { echo "FOUT: docker ontbreekt"; exit 2; }
-docker image inspect sandbox-poc >/dev/null 2>&1 || { echo "Image bouwen..."; docker build -t sandbox-poc "$POC/testomgeving" >/dev/null || exit 2; }
+docker image inspect wsl2-sandbox >/dev/null 2>&1 || { echo "Image bouwen..."; docker build -t wsl2-sandbox "$sandbox/testomgeving" >/dev/null || exit 2; }
 
 # --privileged is nodig omdat Docker standaard geen unprivileged user namespaces toestaat en
 # bubblewrap die nodig heeft. Dat is een beperking van de container, niet van de sandbox: in
 # WSL2 draait bwrap gewoon als de gebruiker.
-UIT="$(docker run --rm --privileged -v "$POC:/poc:ro" sandbox-poc bash -lc '
+UIT="$(docker run --rm --privileged -v "$sandbox:/repo:ro" wsl2-sandbox bash -lc '
 mkdir -p ~/probe-a ~/probe-b ~/repos/probe-7f3a91b2/deelproject/submap ~/Documenten
 echo "PROBE-TOKEN-7f3a91b2 beschermd"  > ~/probe-a/bestand.txt
 echo "PROBE-TOKEN-7f3a91b2 buiten"     > ~/probe-b/bestand.txt
@@ -33,7 +33,7 @@ ln -sfn /home/dev/probe-a/bestand.txt ~/repos/probe-7f3a91b2/omweg.lnk
 
 python3 -c "
 import json
-fs=json.load(open(\"/poc/config/settings.slice1.json\"))[\"sandbox\"][\"filesystem\"]
+fs=json.load(open(\"/repo/config/settings.slice1.json\"))[\"sandbox\"][\"filesystem\"]
 json.dump({\"filesystem\":{\"denyRead\":fs[\"denyRead\"],\"allowRead\":fs[\"allowRead\"],
                           \"allowWrite\":fs[\"allowWrite\"],\"denyWrite\":[]},
            \"network\":{\"allowedDomains\":[],\"deniedDomains\":[]}}, open(\"/home/dev/srt.json\",\"w\"))"
@@ -70,21 +70,21 @@ RC=$?
 echo "$UIT"
 
 if [ "${1:-}" != "--geen-bewijs" ]; then
-  D="$POC/evidence/bubblewrap-$(date +%Y%m%d-%H%M%S)"; mkdir -p "$D"
+  D="$sandbox/evidence/bubblewrap-$(date +%Y%m%d-%H%M%S)"; mkdir -p "$D"
   {
     echo "BUBBLEWRAP-HANDHAVING IN EEN ECHTE LINUX-OMGEVING"
     echo "Dit meet de OS-laag met onze eigen config, zonder Claude en zonder VM."
     echo "Het zegt NIETS over wslInheritsWindowsSettings, /mnt/c of de managed lock-keys."
     echo
     echo "host:   $(uname -sm) / Docker $(docker version --format '{{.Server.Version}}' 2>/dev/null)"
-    shasum -a 256 "$POC/config/settings.slice1.json" "$POC/testomgeving/Dockerfile" \
-                  "$POC/testomgeving/meet-bubblewrap.sh" 2>/dev/null
+    shasum -a 256 "$sandbox/config/settings.slice1.json" "$sandbox/testomgeving/Dockerfile" \
+                  "$sandbox/testomgeving/meet-bubblewrap.sh" 2>/dev/null
     echo
     echo "$UIT"
     echo
     echo "exitcode: $RC"
   } > "$D/bubblewrap.txt"
   echo
-  echo "vastgelegd in: ${D#$POC/}/bubblewrap.txt"
+  echo "vastgelegd in: ${D#$sandbox/}/bubblewrap.txt"
 fi
 exit $RC

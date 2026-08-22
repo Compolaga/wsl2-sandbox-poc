@@ -4,7 +4,7 @@ set -uo pipefail
 cd "$(dirname "$0")"
 
 DOEL="${1:-local/beginstaat}"
-KOPIE="$HOME/poc-beginstaat-$(date +%Y%m%d-%H%M%S)"
+KOPIE="$HOME/sandbox-beginstaat-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$DOEL" "$KOPIE"
 
 {

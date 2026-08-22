@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # Maakt een verse Claude-OAuth-token voor de WSL2-meting.
 # Jij doet alleen de browserlogin; dit script vangt de token af en zet hem
-# in ~/.poc-token. De token zelf wordt niet geprint.
+# in ~/.sandbox-token. De token zelf wordt niet geprint.
 #
 # setup-token wrapt de ~108-teken-token op een 80-koloms tty tot 79+rest.
 # Daarom draait dit in een pty van 400 kolommen, en plakt de parser een
 # harde wrap alsnog aan elkaar.
 #
 # Draai dit in Terminal.app, niet vanuit een agent:
-#   ~/Desktop/wsl2-sandbox-poc/testomgeving/maak-poc-token.sh
+#   ~/Desktop/wsl2-claude-code-sandbox/testomgeving/maak-sandbox-token.sh
 
 set -euo pipefail
 
-DOEL="${POC_TOKEN_PAD:-$HOME/.poc-token}"
+DOEL="${SANDBOX_TOKEN_PAD:-$HOME/.sandbox-token}"
 
 if ! command -v claude >/dev/null; then
   printf '\033[31mFOUT: claude staat niet in PATH.\033[0m\n' >&2
@@ -45,12 +45,12 @@ printf 'Daarna sluit dit vanzelf; de token wordt niet getoond.\n\n'
 
 # Python opent de pty op 400 kolommen (niet 80), koppelt jouw toetsenbord
 # door, en haalt de token uit de uitvoer — ook als hij tóch wrapt.
-export POC_TOKEN_PAD="$DOEL"
+export SANDBOX_TOKEN_PAD="$DOEL"
 python3 - <<'PY'
 import fcntl, os, pty, re, select, struct, sys, termios
 from pathlib import Path
 
-doel = Path(os.environ["POC_TOKEN_PAD"])
+doel = Path(os.environ["SANDBOX_TOKEN_PAD"])
 ANSI = re.compile(
     r"\x1b\[[0-9;?]*[ -/]*[@-~]"
     r"|\x1b\]8;;[^\x07\x1b]*(?:\x07|\x1b\\)"

@@ -77,8 +77,8 @@ if cluster nodeClaude; then
     echo "Alleen sandbox-runtime wordt nagekeken."
     npm install -g @anthropic-ai/sandbox-runtime
   else
-    [ -d "$HOME/.claude" ] && cp -a "$HOME/.claude" "$HOME/.claude.voor-poc"
-    [ -e "$HOME/.claude.json" ] && cp -p "$HOME/.claude.json" "$HOME/.claude.json.voor-poc"
+    [ -d "$HOME/.claude" ] && cp -a "$HOME/.claude" "$HOME/.claude.voor-sandbox"
+    [ -e "$HOME/.claude.json" ] && cp -p "$HOME/.claude.json" "$HOME/.claude.json.voor-sandbox"
     npm install -g @anthropic-ai/claude-code @anthropic-ai/sandbox-runtime
   fi
 else

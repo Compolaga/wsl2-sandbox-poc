@@ -13,7 +13,7 @@ if ((Test-Path -LiteralPath $dir) -and -not (Get-ChildItem $dir -Force)) {
     Remove-Item -LiteralPath $dir -Force
 }
 Write-Host "rollback-round-trip OK"
-$meta = Join-Path $env:USERPROFILE "poc-snapshots\rollback-roundtrip.ok"
+$meta = Join-Path $env:USERPROFILE "wsl2-sandbox-snapshots\rollback-roundtrip.ok"
 New-Item -ItemType Directory -Force -Path (Split-Path $meta) | Out-Null
 Set-Content -LiteralPath $meta -Value ((Get-Date -Format "o") + "`n")
 Write-Host "marker: $meta"

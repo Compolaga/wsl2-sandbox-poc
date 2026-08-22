@@ -15,8 +15,8 @@ if ($Source -match '[\\/]config[\\/]managed-settings\.windows\.json$') {
 }
 
 $dest = Join-Path $env:ProgramFiles "ClaudeCode\managed-settings.json"
-$backup = "$dest.before-wsl2-poc"
-$marker = "$dest.no-original-before-wsl2-poc"
+$backup = "$dest.before-wsl2-sandbox"
+$marker = "$dest.no-original-before-wsl2-sandbox"
 if (-not ((Test-Path -LiteralPath $backup) -or (Test-Path -LiteralPath $marker))) {
     throw "FOUT: geen rollbackmarker. Regel die eerst (HANDOFF.md, veilige proef stap 1)."
 }

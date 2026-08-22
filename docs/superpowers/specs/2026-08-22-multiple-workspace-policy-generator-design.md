@@ -88,7 +88,7 @@ opgeeft, merge hij:
 - bestaande onbekende top-level keys behouden;
 - bestaande `permissions.deny` verenigen met de gegenereerde regels;
 - bestaande MCP-config behouden, tenzij de intake die expliciet invult;
-- security-locks uit de PoC mogen niet worden verzwakt;
+- security-locks uit de proef mogen niet worden verzwakt;
 - conflicten stoppen de generatie met een concrete fout in plaats van automatisch te kiezen.
 
 ## Verificatie
