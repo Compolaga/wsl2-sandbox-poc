@@ -38,6 +38,10 @@ De policygenerator draait met het intakebestand en een lokaal uitvoerpad.
   `allowManagedDomainsOnly` en `wslInheritsWindowsSettings` behouden hun veilige waarden.
 - De gegenereerde payload slaagt voor `check-configs.sh`.
 - Een tweede generatie naar hetzelfde pad faalt zonder `--force`.
+- `~/repos` blijft in `allowRead` en `allowWrite` staan voor de PoC-fixtures.
+- Een intake zonder `confirmed: true` of zonder `askedVia` faalt zonder uitvoerbestand.
+- `/mnt` als workspace faalt tenzij zowel `allowWindowsMounts` als
+  `allowWindowsMountsConfirmed` true zijn.
 
 ## Rejection scenarios
 
@@ -69,3 +73,18 @@ De generator draait.
 
 - De generator stopt met een concrete conflictmelding.
 - De bestaande managed settings en het uitvoerpad blijven ongewijzigd.
+
+### Given
+
+`local/consent.json` of `local/policy-input.json` ontbreekt, of de intake is niet bevestigd.
+
+### When
+
+`./install-prereqs.sh`, `./generate-policy.sh`, `./place-policy.sh`, `./bring-workspace.sh bind`
+zonder `--i-approved-bind`, of `./run.sh` (groen) draait.
+
+### Then
+
+- Het script eindigt met een niet-nul exitcode.
+- Er wordt niets geïnstalleerd, gegenereerd of geplaatst.
+- De fout noemt het ontbrekende bestand of de ontbrekende bevestiging.

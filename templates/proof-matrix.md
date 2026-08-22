@@ -1,6 +1,8 @@
 # Bewijsmatrix — invullen aan het einde van de run
 
-Vul elke rij in met **pass**, **fail**, **ongeldig**, **niet gedraaid** of **handmatig nog open**.
+`run.sh` schrijft een ingevulde kopie naar `evidence/<stempel>/proof-matrix.md`. Dit bestand
+is het sjabloon. Vul ontbrekende handmatige rijen aan met **pass**, **fail**, **ongeldig**,
+**niet gedraaid** of **handmatig nog open**.
 Claim nooit "de sandbox houdt" als een rij die hieronder als vrijgavepoort staat nog open is.
 
 Laptop: ____________________   Distro/user: ____________________   Datum: __________

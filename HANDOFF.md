@@ -21,7 +21,9 @@ appsettings.json` levert gewoon de inhoud. Deze handoff voegt dat blok toe, en z
 Windows-policy zo dat hij ook geldt binnen WSL2.
 
 **Wat je nodig hebt:** dit document, de map waarin het staat (kopieer hem naar de distro —
-`fixture.sh`, `run.sh`, `check-configs.sh`, `unlock.sh` en `config/` horen erbij),
+`agent-gate.sh`, `install-prereqs.sh`, `generate-policy.sh`, `place-policy.sh`,
+`bring-workspace.sh`, `fixture.sh`, `run.sh`, `check-configs.sh`, `unlock.sh` en `config/`
+horen erbij),
 [README.md](README.md#handmatige-procedures) voor de vijf handmatige procedures, en OQ-6 uit
 [open-questions.md](open-questions.md) — die heb je nodig omdat hij bepaalt wat AC-23
 betekent. OQ-5 is opgelost via settings-keys; de procedure staat verderop. [decisions.md](decisions.md) is
@@ -33,13 +35,21 @@ alleen achtergrond. Moet je WSL2 zelf nog uitrollen, begin dan bij
 ## Agentpoort — eerst vragen, dan pas doen
 
 Dit blok is verplicht voor elke Claude Code- of Cursor-agent die deze handoff uitvoert.
-Zonder de antwoorden hieronder mag je **niets** installeren, geen mappen aanmaken, geen
-repositories verplaatsen en geen policy plaatsen. Gebruik daarvoor de **AskUserQuestion**-tool
-(Claude Code) of het equivalent in Cursor. Een aanname als "dan maar `~/repos`" is een fout.
+De scripts weigeren verder te gaan tot de antwoorden op schijf staan. Gebruik de
+**AskUserQuestion**-tool (Claude Code) of het equivalent in Cursor. Een aanname als "dan
+maar `~/repos`" is een fout. Een losse `apt-get`, `npm install -g` of kopie van
+`config/managed-settings.windows.json` is een mislukte run.
 
 De Windows-proef van 22-08-2026 faalde precies hier: de agent installeerde bubblewrap, Node
 en Claude zonder toestemming, nam `~/repos` als workspace, en claimde daarna dat de sandbox
 hield terwijl AC-16, AC-23 en VERIFICATIE.md nog openstonden.
+
+Zonder deze twee bestanden doen de scripts niets:
+
+| Bestand | Na vraag | Voorbeeld |
+|---|---|---|
+| `local/consent.json` | 1 | [templates/consent.example.json](templates/consent.example.json) |
+| `local/policy-input.json` | 2, met `confirmed: true` | [templates/policy-input.example.json](templates/policy-input.example.json) |
 
 ### Vraag 1 — installaties
 
@@ -51,6 +61,11 @@ Toon wat er ontbreekt (WSL2, distro, `bubblewrap`, `socat`, Node, Claude Code,
 - Mag ik Node / Claude Code / sandbox-runtime globaal installeren of upgraden?
 
 Nee op een cluster betekent: stop, schrijf wat er ontbreekt, installeer het niet zelf.
+Schrijf daarna `local/consent.json` en installeer **alleen** via:
+
+```bash
+./install-prereqs.sh
+```
 
 ### Vraag 2 — welke paden mag Claude lezen
 
@@ -61,29 +76,42 @@ Vraag, in deze volgorde, één onderwerp per AskUserQuestion:
 3. Welke extra gevoelige paden buiten die workspaces horen in `permissions.deny`
    (`.ssh`, klantdata, …)?
 4. Lees-alleen of ook schrijven, per root?
-5. Hoe haal je Windows-mappen de distro in: **kopiëren** (aanbevolen) of **bind-mount**?
-   Een symlink van een Linux-pad naar `/mnt/c/...` is verboden — dat is de omweg die AC-06
-   meet. Van Windows naar `\\wsl$\<distro>\<linux-pad>` mag wél, als Explorer-koppeling.
 
-Sla de bevestigde antwoorden op in `local/policy-input.json` (git-genegeerd). Genereer daarna
-de payload; installeer die nog niet:
+Windows-mappen haal je de distro in door te **kopiëren**. Dat is de voorgeschreven route,
+geen keuze. Bind-mount alleen als copy onmogelijk is **én** na een tweede, aparte
+AskUserQuestion; zet dan `bindApproved: true`. Een symlink van een Linux-pad naar
+`/mnt/c/...` is verboden — dat is de omweg die AC-06 meet. Van Windows naar
+`\\wsl$\<distro>\<linux-pad>` mag wél, als Explorer-koppeling na de kopie.
+
+Vat de antwoorden samen, vraag één bevestiging, en schrijf pas daarna
+`local/policy-input.json` met `confirmed: true`. Genereer de payload; installeer die nog
+niet:
 
 ```bash
 ./generate-policy.sh local/policy-input.json
-./bring-workspace.sh copy 'C:\Users\naam\src\project' /home/<user>/work/project
+./bring-workspace.sh 'C:\Users\naam\src\project' /home/<user>/work/project
 ```
 
-`~/repos` is alleen de PoC-default voor fixtures. Gebruik hem nooit als organisatiekeuze.
+`~/repos` blijft in de payload staan voor de PoC-fixtures. Gebruik hem nooit als
+organisatiekeuze.
 
 ### Vraag 3 — policy plaatsen
 
 Pas ná een geldige nulmeting (`./run.sh --red`) vraag je of de gegenereerde payload naar
 `C:\Program Files\ClaudeCode\managed-settings.json` mag, en of een UAC-prompt oké is.
 Noem het bijeffect: `allowedMcpServers: []` zet MCP in WSL (en vaak ook native) dicht.
+Plaats **alleen** via:
+
+```bash
+./place-policy.sh
+```
+
+Dat script weigert zonder consent, zonder bevestigde intake, zonder gegenereerde payload,
+zonder geslaagde rode run, en weigert de statische template.
 
 ### Einde van de run
 
-Vul [templates/proof-matrix.md](templates/proof-matrix.md) in en toon die tabel. Zeg niet
+`./run.sh` schrijft `evidence/<stempel>/proof-matrix.md` en toont die tabel. Zeg niet
 "de sandbox houdt" als een vrijgaverij nog open is. Wat altijd nog open is na één laptop:
 
 - AC-16 als die niet is gedraaid;
@@ -99,8 +127,9 @@ Pas die tweede laptop, plus OQ-1 en OQ-6, maakt dit uitrolklaar. Eén groene `ru
 
 Deze route is bedoeld om de handoff lokaal te proberen **vóór** Intune. Gebruik een
 testlaptop of een laptop waarop tijdelijk verlies van Claude-toegang acceptabel is. De
-Windows-config zet in WSL vrijwel de hele Linux-home en `/mnt/` dicht; repo's buiten
-`~/repos` werken daarna bewust niet.
+Windows-config zet in WSL vrijwel de hele Linux-home en `/mnt/` dicht. Repo's werken alleen
+in de **bevestigde Linux-workspaces** plus de PoC-fixtures onder `~/repos`. Een Windows-map
+die je niet hebt gekopieerd, is daarna onbruikbaar.
 
 1. **Regel de rollback vóór je de policy plaatst.** Open PowerShell als administrator en
    maak, als het bestand al bestaat, een kopie:
@@ -130,11 +159,11 @@ Windows-config zet in WSL vrijwel de hele Linux-home en `/mnt/` dicht; repo's bu
 
    `unlock.sh` kan het Windows-bestand alleen signaleren; het kan het niet verwijderen.
 
-2. **Doorloop A1 t/m A11 hieronder, ná de Agentpoort.** Installeer in de distro alleen wat
-   de gebruiker in vraag 1 heeft goedgekeurd. Minimaal nodig: `bubblewrap`, `socat`,
-   `python3`, Node, Claude Code en `@anthropic-ai/sandbox-runtime`. Die laatste is op WSL
-   onderdeel van de grens: zonder seccomp kan een Windows-binary buiten de sandbox lezen.
-   Log in met `claude auth login` voordat je `run.sh` gebruikt.
+2. **Doorloop A1 t/m A11 hieronder, ná de Agentpoort.** Installeer in de distro alleen via
+   `./install-prereqs.sh` wat de gebruiker in vraag 1 heeft goedgekeurd. Minimaal nodig:
+   `bubblewrap`, `socat`, `python3`, Node, Claude Code en `@anthropic-ai/sandbox-runtime`.
+   Die laatste is op WSL onderdeel van de grens: zonder seccomp kan een Windows-binary
+   buiten de sandbox lezen. Log in met `claude auth login` voordat je `run.sh` gebruikt.
 
 3. **Kopieer deze hele map naar de Linux-home**, niet naar `/mnt/c`, en draai vóór er een
    policy actief is:
@@ -162,13 +191,13 @@ Windows-config zet in WSL vrijwel de hele Linux-home en `/mnt/` dicht; repo's bu
    het bestand dat je gaat plaatsen:
 
    ```bash
-   ./check-configs.sh /pad/naar/de/testpayload.json
+   ./check-configs.sh local/managed-settings.windows.generated.json
    ```
 
-5. **Plaats de payload met Windows-adminrechten** op
-   `C:\Program Files\ClaudeCode\managed-settings.json`. Zorg dat
+5. **Plaats de gegenereerde payload** met `./place-policy.sh` (Windows-admin / UAC). Zorg dat
    `/etc/claude-code/managed-settings.json` niet óók bestaat, draai `wsl --shutdown` en open
-   de distro opnieuw.
+   de distro opnieuw. De statische `config/managed-settings.windows.json` is geen plaatsbare
+   bron.
 
 6. **Volg [VERIFICATIE.md](VERIFICATIE.md).** Dat is de korte hoofdroute en gebruikt
    `fixture.sh` met botsingscontrole en marker-gebaseerde cleanup. Draai daarna desgewenst
@@ -176,10 +205,10 @@ Windows-config zet in WSL vrijwel de hele Linux-home en `/mnt/` dicht; repo's bu
    via de volledige sectie **Opruimen** in `VERIFICATIE.md`. Die herstelt ook een tijdelijk
    overschreven `~/.claude/settings.json`; alleen `./fixture.sh --clean` doet dat niet.
 
-7. **Vul [templates/proof-matrix.md](templates/proof-matrix.md) in.** Draai bij elk
-   onverwacht effect eerst terug. Test daarna AC-14, AC-15/16, AC-21 en AC-23. Deze
-   laptopproef is geen vrijgave voor de vloot: daarvoor moet dezelfde matrix groen zijn op
-   een **tweede developer-laptop**, plus OQ-1, OQ-6, proxy/package-feeds en de overige
+7. **Lees de bewijsmatrix** die `run.sh` naar `evidence/<stempel>/proof-matrix.md` schrijft.
+   Draai bij elk onverwacht effect eerst terug. Test daarna AC-14, AC-15/16, AC-21 en AC-23.
+   Deze laptopproef is geen vrijgave voor de vloot: daarvoor moet dezelfde matrix groen zijn
+   op een **tweede developer-laptop**, plus OQ-1, OQ-6, proxy/package-feeds en de overige
    aannames.
 
 ## Stap 0 — controleer eerst of de aannames kloppen
@@ -196,7 +225,7 @@ dat het plan — bij elke aanname staat wat er dan moet gebeuren.
 | A4 | Bubblewrap mag **user namespaces** maken | `sysctl kernel.apparmor_restrict_unprivileged_userns` | Geeft dit `1` (Ubuntu 24.04+), dan is een AppArmor-profiel nodig — zie hieronder. Geeft het `0` of "No such file", dan is er niets te doen. Op WSL2 bestond de sleutel in onze meting niet; controleer hem toch, zie hieronder. |
 | A5 | De **seccomp-filter** is geïnstalleerd | `npm install -g @anthropic-ai/sandbox-runtime` | Zonder deze optionele filter kan de sandbox Unix-sockets niet blokkeren, en dat is precies hoe WSL Windows-binaries start. Zie het kader hieronder — dit is geen detail. |
 | A6 | Developers hebben **geen lokale admin** op hun laptop | jullie eigen beeld van de werkplekinrichting | Met lokale admin kan een developer `C:\Program Files\ClaudeCode\` bewerken en is dit geen grens maar een vangnet. Dat is een andere belofte; zeg dat dan expliciet. |
-| A7 | Repo's staan in de **bevestigde Linux-workspaces** (vaak onder `~/work`, niet per se `~/repos`) | AskUserQuestion; daarna `bring-workspace.sh` voor Windows-mappen | De policy zet `/mnt/` dicht. Een Windows-repo blijft onbruikbaar tot hij is gekopieerd of bind-gemonteerd naar een Linux-pad. Symlink naar `/mnt/c` is geen oplossing. |
+| A7 | Repo's staan in de **bevestigde Linux-workspaces** (vaak onder `~/work`, niet per se `~/repos`) | AskUserQuestion; daarna `bring-workspace.sh` (copy) voor Windows-mappen | De policy zet `/mnt/` dicht. Een Windows-repo blijft onbruikbaar tot hij is gekopieerd naar een Linux-pad. Bind alleen na een tweede ja. Symlink naar `/mnt/c` is geen oplossing. |
 | A8 | Uitgaand verkeer heeft **geen bedrijfsproxy** nodig | `echo $HTTPS_PROXY` in de distro | Met een proxy hoort `HTTPS_PROXY`/`NO_PROXY` in het `env`-blok van de managed settings, anders breekt de sandbox-egress. |
 | A9 | Jullie **interne package-feeds** staan in `allowedDomains` | vergelijk je NuGet/npm-config met de lijst in de config | Ontbreekt de Azure DevOps artifact-feed, dan breekt `dotnet restore` binnen de sandbox. Vul aan vóór uitrol. |
 | A10 | Claude Code is een **recente versie** en gebruikt geen third-party provider | `claude --version`; `echo $ANTHROPIC_BASE_URL $CLAUDE_CODE_USE_BEDROCK`; lees de minimumversies van `allowManagedReadPathsOnly`, `allowManagedDomainsOnly` en `wslInheritsWindowsSettings` in de [settings-documentatie](https://code.claude.com/docs/en/settings) | Een te oude versie negeert die keys stil — dan lijkt de policy te staan terwijl de lock niet werkt. Een third-party provider verandert hoe settings geladen worden. |

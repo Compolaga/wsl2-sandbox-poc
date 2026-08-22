@@ -45,8 +45,9 @@ een aangepaste binary draait.
 Achtergrond staat apart: [decisions.md](decisions.md) voor de feiten met hun bron en de
 besluiten, [open-questions.md](open-questions.md) voor wat nog open is,
 [HANDOFF.md](HANDOFF.md) voor de uitvoerbare handoff. Een agent die die handoff volgt
-begint bij de **Agentpoort**: AskUserQuestion vóór installaties en vóór workspace-keuze,
-daarna [templates/proof-matrix.md](templates/proof-matrix.md). `~/repos` is geen
+begint bij de **Agentpoort**: AskUserQuestion, daarna `local/consent.json` en
+`local/policy-input.json`. Zonder die bestanden weigeren `install-prereqs.sh`,
+`generate-policy.sh`, `place-policy.sh` en een groene `run.sh`. `~/repos` is geen
 organisatiekeuze.
 
 ## Voorwaarden
@@ -61,13 +62,14 @@ organisatiekeuze.
 | `/tmp` schrijfbaar in de sandbox | elke Bash-probe schrijft daarheen; AC-00p toetst het en breekt de run af als het niet kan |
 | Claude Code, recente versie | `allowManagedReadPathsOnly`, `allowManagedDomainsOnly` en `wslInheritsWindowsSettings` hebben elk een minimumversie; controleer ze in de [settings-documentatie](https://code.claude.com/docs/en/settings) tegen `claude --version` |
 | `python3` | de preflights lezen de configs ermee uit; zonder hem weigert `run.sh` te starten |
-| Repo's in `~/repos` in de distro | de policy zet `/mnt/` dicht; wie zijn repo op de Windows-schijf heeft, kan na uitrol niet werken |
+| Repo's in de bevestigde Linux-workspaces | de policy zet `/mnt/` dicht; Windows-mappen eerst kopiëren met `bring-workspace.sh`. `~/repos` blijft alleen voor PoC-fixtures |
 
 ## Jezelf niet buitensluiten
 
 De configs voor slice 1, 2 en 3 horen in een VM of in een **gecontroleerde proef op een
 aparte Windows-testlaptop**, niet onaangekondigd op een dagelijkse werkmachine. Ze bevatten
-`denyRead: ["~/"]`: alles dicht behalve `~/repos`. Op een gewone laptop betekent dat dat
+`denyRead: ["~/"]`: alles dicht behalve de bevestigde workspaces en de PoC-fixtures onder
+`~/repos`. Op een gewone laptop betekent dat dat
 Claude Code niet meer bij andere mappen in de Linux-home of bij `/mnt/` kan — en met
 `allowUnsandboxedCommands: false` kun je dat niet omzeilen. Regel vóór plaatsing een
 Windows-adminrollback; `unlock.sh` kan het Windows-bestand niet verwijderen. De veilige
@@ -272,8 +274,9 @@ het restrisico. Zonder dat besluit is de vrijgavepoort niet gehaald.
 
 1. `/etc/claude-code/managed-settings.json` verwijderen en `~/.claude/settings.json` leegmaken.
 2. `./run.sh` → containment-tests moeten nu **falen**. Er is geen policy meer.
-3. `config/managed-settings.windows.json` plaatsen als
-   `C:\Program Files\ClaudeCode\managed-settings.json` (Windows-admin; in de VM ben je dat zelf).
+3. de gegenereerde payload (`local/managed-settings.windows.generated.json`) plaatsen via
+   `./place-policy.sh` als `C:\Program Files\ClaudeCode\managed-settings.json`
+   (Windows-admin; in de VM ben je dat zelf). De statische template is geen plaatsbare bron.
 4. `wsl --shutdown`, distro herstarten, `./run.sh` → nu moeten ze **slagen**. Dat is AC-15.
 5. `"wslInheritsWindowsSettings": false`, `wsl --shutdown`, `./run.sh` → weer **falen**. Dat is AC-16.
 

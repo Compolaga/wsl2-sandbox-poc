@@ -103,8 +103,9 @@ stille root-installaties. AC-14 en AC-21 zijn daar handmatig gedaan; AC-16, AC-2
 VERIFICATIE.md niet. De agent vroeg geen workspaces en liet de policy actief staan.
 
 Besluit: de kern van de sandbox is herhaalbaar op hardware, maar de handoff is pas
-agent-klaar met AskUserQuestion-poorten, een gegenereerde workspace-payload en een
-bewijsmatrix die één laptop niet als vrijgave telt. Zie
+agent-klaar met AskUserQuestion-poorten die de scripts afdwingen (`install-prereqs.sh`,
+`generate-policy.sh`, `place-policy.sh`, groene `run.sh`), een gegenereerde
+workspace-payload en een bewijsmatrix die één laptop niet als vrijgave telt. Zie
 [HANDOFF.md](HANDOFF.md#agentpoort--eerst-vragen-dan-pas-doen).
 
 ## Gemeten, 21-08-2026

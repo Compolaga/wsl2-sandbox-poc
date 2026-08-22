@@ -1,0 +1,28 @@
+{
+  "askedVia": "AskUserQuestion",
+  "confirmed": true,
+  "confirmedAt": "2026-08-22T18:05:00+02:00",
+  "bringMode": "copy",
+  "bindApproved": false,
+  "allowWindowsMounts": false,
+  "allowWindowsMountsConfirmed": false,
+  "workspaces": [
+    {
+      "path": "/home/dev/work/client-a",
+      "access": "read-write",
+      "contents": ["repo"]
+    }
+  ],
+  "protectedPaths": [
+    {
+      "path": "/home/dev/work/client-a/secrets",
+      "reason": "secrets"
+    },
+    {
+      "path": "/home/dev/.ssh",
+      "reason": "keys"
+    }
+  ],
+  "allowedDomains": [],
+  "proxy": {}
+}

@@ -8,8 +8,9 @@ kan een Windows-side policy niet verwijderen.
 
 Je hebt nodig: WSL2, `bubblewrap`, `socat`, de seccomp-filter
 `@anthropic-ai/sandbox-runtime`, een recente Claude Code, een beschermd bestand, een gewoon
-leesbaar bestand, een projectmap en vijftien minuten. Repo's moeten in `~/repos` in de distro
-staan; de policy blokkeert `/mnt/`.
+leesbaar bestand, een projectmap en vijftien minuten. De twaalf fixture-controles hieronder
+blijven in `~/repos/probe-*`. Jouw echte workspaces staan in `local/policy-input.json`; die
+komen naast de fixtures in de gegenereerde payload. De policy blokkeert `/mnt/`.
 
 ## Voorbereiden
 
@@ -51,6 +52,10 @@ Op WSL2 komen er drie bij; de laatste toetst het Unix-socket-gat:
 
 **Stap 8 is de belangrijkste.** Zonder die stap betekent "geen token" misschien alleen dat er
 niets is geprobeerd. Slaagt 8 en falen de beschermde leespogingen, dan werkt de sandbox.
+
+Heb je extra workspaces in `local/policy-input.json`, doe dan per root nog twee checks:
+één gewoon bestand moet leesbaar zijn, één beschermd pad (of een tijdelijke canary daar)
+niet. Dat is geen vervanging van de twaalf fixture-stappen hierboven.
 
 ## Dat de developer er niet omheen kan
 

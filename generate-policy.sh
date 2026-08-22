@@ -8,5 +8,6 @@ UIT="${2:-local/managed-settings.windows.generated.json}"
 FORCE=()
 [ "${3:-}" = "--force" ] && FORCE=(--force)
 [ -n "$IN" ] || { echo "gebruik: ./generate-policy.sh local/policy-input.json [uitvoer.json] [--force]"; exit 2; }
+./agent-gate.sh generate || exit 2
 python3 tools/policy_generator.py "$IN" "$UIT" "${FORCE[@]}" || exit $?
 ./check-configs.sh "$UIT"

@@ -24,6 +24,9 @@ RUNTIME_READ = (
     "~/.npm",
     "~/.gitconfig",
 )
+# Fixtures van de PoC-suite blijven leesbaar naast de gekozen workspaces.
+FIXTURE_READ = ("~/repos",)
+FIXTURE_WRITE = ("~/repos",)
 SYSTEM_ROOTS = {"/", "/home", "/root", "/usr", "/bin", "/sbin", "/lib", "/lib64", "/etc", "/opt", "/proc", "/dev"}
 LOCKS = {
     ("sandbox", "enabled"): True,
@@ -118,7 +121,17 @@ def merge_existing(base: dict, existing: dict) -> dict:
 
 
 def generate(intake: dict, template: dict) -> dict:
+    if intake.get("confirmed") is not True:
+        raise IntakeError(
+            "intake is niet bevestigd; zet confirmed: true pas na de AskUserQuestion-samenvatting"
+        )
+    if not intake.get("askedVia"):
+        raise IntakeError("askedVia ontbreekt; vastleggen via AskUserQuestion")
     allow_mnt = bool(intake.get("allowWindowsMounts"))
+    if allow_mnt and intake.get("allowWindowsMountsConfirmed") is not True:
+        raise IntakeError(
+            "allowWindowsMounts vraagt een tweede ja: allowWindowsMountsConfirmed: true"
+        )
     workspaces = intake.get("workspaces") or []
     if not workspaces:
         raise IntakeError("minstens één workspace is verplicht")
@@ -149,8 +162,10 @@ def generate(intake: dict, template: dict) -> dict:
 
     out = deepcopy(template)
     fs = out["sandbox"]["filesystem"]
-    allow_read = [p for p in fs.get("allowRead", []) if p in RUNTIME_READ]
-    allow_write = ["/tmp"]
+    allow_read = [p for p in fs.get("allowRead", []) if p in RUNTIME_READ or p in FIXTURE_READ]
+    allow_write = [p for p in fs.get("allowWrite", []) if p == "/tmp" or p in FIXTURE_WRITE]
+    if "/tmp" not in allow_write:
+        allow_write.append("/tmp")
     for pad, access in roots:
         if pad not in allow_read:
             allow_read.append(pad)
@@ -226,7 +241,7 @@ def write_atomic(path: Path, data: dict, force: bool) -> None:
         raise
 
 
-def summarize(data: dict) -> str:
+def summarize(data: dict, allow_mnt: bool = False) -> str:
     fs = data["sandbox"]["filesystem"]
     regels = [
         "workspaces (allowRead): " + ", ".join(p for p in fs["allowRead"] if p not in RUNTIME_READ),
@@ -234,6 +249,10 @@ def summarize(data: dict) -> str:
         "beschermd: " + ", ".join(data["_beschermd"].keys()),
         "domeinen: " + ", ".join(data["sandbox"]["network"].get("allowedDomains") or []),
     ]
+    if allow_mnt:
+        regels.append(
+            "WAARSCHUWING: allowWindowsMounts staat aan; paden onder /mnt openen de Windows-schijf."
+        )
     return "\n".join(regels)
 
 
@@ -252,7 +271,7 @@ def main(argv: list[str] | None = None) -> int:
     except IntakeError as e:
         print(f"FOUT: {e}")
         return 2
-    print(summarize(data))
+    print(summarize(data, bool(intake.get("allowWindowsMounts"))))
     print(f"geschreven: {args.uitvoer}")
     return 0
 

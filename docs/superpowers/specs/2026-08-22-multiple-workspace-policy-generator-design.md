@@ -110,15 +110,23 @@ opgeruimd.
 
 ## Windows-mappen de distro in
 
-`bring-workspace.sh` kopieert standaard een Windows-pad naar een Linux-workspace. Bind-mount
-is een bewuste tweede keuze. Een symlink van Linux naar `/mnt/c` is verboden: dat is de
-omweg die AC-06 meet. Een Windows-junction naar `\\wsl$\<distro>\<linux-pad>` mag wél.
+`bring-workspace.sh` kopieert standaard een Windows-pad naar een Linux-workspace. Twee
+argumenten zonder modus is copy. Bind-mount is geen peer: het script eist
+`--i-approved-bind` én `bindApproved: true` in de intake. Een symlink van Linux naar
+`/mnt/c` is verboden: dat is de omweg die AC-06 meet. Een Windows-junction naar
+`\\wsl$\<distro>\<linux-pad>` mag wél.
+
+Installeren, genereren, plaatsen en een groene `run.sh` lopen via `agent-gate.sh`. Zonder
+`local/consent.json` / bevestigde `local/policy-input.json` stoppen die scripts. De
+statische Windows-template is geen plaatsbare bron; alleen
+`local/managed-settings.windows.generated.json` gaat naar Program Files, en alleen na een
+geslaagde rode nulmeting.
 
 ## Bewijsmatrix
 
-Aan het einde van elke agentrun hoort [templates/proof-matrix.md](../../../templates/proof-matrix.md)
-ingevuld te worden. Eén groene `run.sh` is geen vrijgave; daarvoor is onder meer een tweede
-developer-laptop nodig.
+`run.sh` schrijft aan het einde [templates/proof-matrix.md](../../../templates/proof-matrix.md)
+naar `evidence/<stempel>/proof-matrix.md`. De tweede developer-laptop blijft daar altijd
+open. Eén groene `run.sh` is geen vrijgave.
 
 ## Niet-doelen
 

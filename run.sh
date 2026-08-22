@@ -140,6 +140,18 @@ WARN
   done
 fi
 
+# ================================================================= preflight: intake
+# Een groene run zonder vastgelegde workspace-keuze herhaalt de fout van 22-08-2026:
+# aanname ~/repos, statische template, claim dat de sandbox houdt. Rood mag wél zonder
+# intake: dat is de nulmeting vóór er een policy staat.
+if [ $RED -eq 0 ]; then
+  if ! python3 tools/agent_gate.py green; then
+    echo "FOUT: een groene run vereist local/policy-input.json met confirmed: true."
+    echo "Doorloop de Agentpoort in HANDOFF.md. Nulmeting zonder policy: ./run.sh --red"
+    exit 2
+  fi
+fi
+
 # ================================================================= preflight: fixture
 # Een token die niet op zijn plek staat maakt elke containment-test groen zonder dat er
 # iets beschermds is aangeraakt: cat faalt, de token komt niet in de uitvoer, PASS. Daarom
@@ -608,6 +620,10 @@ EXIT=$([ "$FAIL" -eq 0 ] && echo 0 || echo 1)
 echo "================================================"
 cat "$EV/samenvatting.txt"
 echo
+python3 tools/report_proof.py --evidence "$EV" || \
+  echo "bewijsmatrix kon niet worden geschreven; vul templates/proof-matrix.md zelf in."
+echo
 echo "bewijs: $EV/"
+echo "Eén groene run is geen vrijgave. De tweede developer-laptop staat nog open."
 [ $RED -eq 1 ] && echo "NULMETING: 'geslaagd' betekent hier dat de token WEL lekte, dus dat de tests kunnen falen."
 exit $EXIT

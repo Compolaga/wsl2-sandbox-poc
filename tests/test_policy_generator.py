@@ -15,6 +15,8 @@ class GeneratorTests(unittest.TestCase):
     def setUp(self):
         self.template = load_json(ROOT / "config/managed-settings.windows.json")
         self.intake = {
+            "askedVia": "AskUserQuestion",
+            "confirmed": True,
             "workspaces": [
                 {"path": "/home/dev/work/client-a", "access": "read-write", "contents": ["repo"]},
                 {"path": "/home/dev/work/reference", "access": "read-only", "contents": ["docs"]},
@@ -41,12 +43,40 @@ class GeneratorTests(unittest.TestCase):
         self.assertFalse(out["sandbox"]["allowUnsandboxedCommands"])
         self.assertTrue(out["sandbox"]["filesystem"]["allowManagedReadPathsOnly"])
         self.assertTrue(out["wslInheritsWindowsSettings"])
+        self.assertIn("~/repos", out["sandbox"]["filesystem"]["allowRead"])
+        self.assertIn("~/repos", out["sandbox"]["filesystem"]["allowWrite"])
+
+    def test_rejects_unconfirmed_intake(self):
+        intake = dict(self.intake)
+        intake["confirmed"] = False
+        with self.assertRaises(IntakeError):
+            generate(intake, self.template)
+        del intake["confirmed"]
+        with self.assertRaises(IntakeError):
+            generate(intake, self.template)
 
     def test_rejects_mnt_and_root(self):
         for pad in ("/", "~", "/home", "/mnt/c/Users/dev/src"):
-            intake = {"workspaces": [{"path": pad, "access": "read-write"}]}
+            intake = {
+                "askedVia": "AskUserQuestion",
+                "confirmed": True,
+                "workspaces": [{"path": pad, "access": "read-write"}],
+            }
             with self.assertRaises(IntakeError):
                 generate(intake, self.template)
+
+    def test_mnt_needs_double_confirmation(self):
+        intake = {
+            "askedVia": "AskUserQuestion",
+            "confirmed": True,
+            "allowWindowsMounts": True,
+            "workspaces": [{"path": "/mnt/c/Users/dev/src", "access": "read-write"}],
+        }
+        with self.assertRaises(IntakeError):
+            generate(intake, self.template)
+        intake["allowWindowsMountsConfirmed"] = True
+        out = generate(intake, self.template)
+        self.assertIn("/mnt/c/Users/dev/src", out["sandbox"]["filesystem"]["allowRead"])
 
     def test_no_partial_file_on_error(self):
         with tempfile.TemporaryDirectory() as td:
