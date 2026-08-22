@@ -44,7 +44,7 @@ een aangepaste binary draait.
 
 Achtergrond staat apart: [decisions.md](decisions.md) voor de feiten met hun bron en de
 besluiten, [open-questions.md](open-questions.md) voor wat nog open is,
-[HANDOFF-willem.md](HANDOFF-willem.md) voor het document dat Willem krijgt.
+[HANDOFF.md](HANDOFF.md) voor de uitvoerbare handoff.
 
 ## Voorwaarden
 
@@ -68,7 +68,7 @@ aparte Windows-testlaptop**, niet onaangekondigd op een dagelijkse werkmachine. 
 Claude Code niet meer bij andere mappen in de Linux-home of bij `/mnt/` kan — en met
 `allowUnsandboxedCommands: false` kun je dat niet omzeilen. Regel vóór plaatsing een
 Windows-adminrollback; `unlock.sh` kan het Windows-bestand niet verwijderen. De veilige
-proefroute staat bovenaan [HANDOFF-willem.md](HANDOFF-willem.md#veilige-proef-op-één-windows-laptop).
+proefroute staat bovenaan [HANDOFF.md](HANDOFF.md#veilige-proef-op-één-windows-laptop).
 
 Drie dingen vangen dat af:
 

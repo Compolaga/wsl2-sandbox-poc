@@ -198,7 +198,7 @@ voeren.
 Zijn bestand botst niet met het onze — wij voegen een `sandbox`-blok toe dat er nog niet is,
 en onze `Read(...)`-regels breiden zijn lijst uit. Drie dingen moeten wel terug naar hem: er
 is vandaag geen Bash-bescherming, negen `Write(...)`-regels doen niets, en vier patronen
-missen hun doel. Die drie staan uitgeschreven in [HANDOFF-willem.md](HANDOFF-willem.md).
+missen hun doel. Die drie staan uitgeschreven in [HANDOFF.md](HANDOFF.md).
 
 Wat er nu in `C:\Program Files\ClaudeCode\managed-settings.json` staat: één
 `permissions.deny`-lijst met bestandspatronen (`App.config`, `Web.config`,
