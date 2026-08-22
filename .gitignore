@@ -7,6 +7,9 @@ evidence/*
 *token
 .azure-wsl2-poc-wachtwoord
 
+__pycache__/
+*.pyc
+
 # Bevestigde laptop-intake en gegenereerde payloads horen niet in git.
 local/
 run.sh.origineel
