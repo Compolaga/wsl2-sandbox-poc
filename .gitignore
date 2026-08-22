@@ -1,0 +1,13 @@
+# Ruwe meetuitvoer bevat lokale paden en omgevingsmetadata.
+evidence/*
+!evidence/README.md
+
+# Lokale credentials en tijdelijke Azure-bestanden.
+.poc-token
+*token
+.azure-wsl2-poc-wachtwoord
+
+# Platform- en editormetadata.
+.DS_Store
+.idea/
+.vscode/

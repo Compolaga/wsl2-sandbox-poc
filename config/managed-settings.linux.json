@@ -1,0 +1,77 @@
+{
+  "_comment": "SLICE 2 - /etc/claude-code/managed-settings.json IN de WSL2-distro, alleen root-schrijfbaar. Identiek aan slice 1 plus de managed-only lock-keys. Bewijst dat de locks werken, los van de vraag of de Intune-levering aankomt; is zelf GEEN onderdeel van de uitrol, want Intune kan niet in de distro schrijven. Geen allowManagedPermissionRulesOnly nodig: deny wint altijd van allow, en een managed regel kan door geen enkele lagere scope worden overruled.",
+  "_mcp": "MCP-blokkade loopt via SETTINGS-keys, niet via managed-mcp.json. Dat laatste is een standalone bestand dat waarschijnlijk niet meereist met wslInheritsWindowsSettings; allowedMcpServers en allowManagedMcpServersOnly zijn wel settings-keys, en van die route is op 21-08-2026 gemeten dat hij de WSL-grens oversteekt. Vul allowedMcpServers met de servers uit Willems bestaande managed-mcp.json. Een LEGE array betekent: geen enkele server toegestaan. Willems permissions.deny bevat daarnaast al mcp__*, wat de tools sowieso blokkeert - twee lagen.",
+  "allowManagedMcpServersOnly": true,
+  "allowedMcpServers": [],
+  "_paden": "DIT IS DE ENIGE PLEK WAAR PADEN STAAN. Houd permissions.deny en sandbox.filesystem.denyRead in sync - ze beschermen dezelfde paden op twee lagen.",
+  "_beschermd": {
+    "~/probe-a": "Read(~/probe-a/**)",
+    "~/.ssh": "Read(~/.ssh/**)",
+    "~/.aws": "Read(~/.aws/**)",
+    "/mnt/": "Read(//mnt/**)",
+    "~/repos/**/config-a.txt": "Read(~/repos/**/config-a.txt)",
+    "~/repos/**/submap": "Read(~/repos/**/submap/**)"
+  },
+  "_beschermd_uitleg": "DE ENIGE PLEK OM EEN BESCHERMD PAD TOE TE VOEGEN. Sleutel = het pad zoals de sandbox-laag het kent, waarde = de Read(...)-regel die dezelfde bescherming op de tool-laag geeft. check-configs.sh eist dat elke waarde in permissions.deny staat en dat de sleutel door denyRead gedekt is - letterlijk of via een bredere wortel. Voeg je hier een pad toe zonder het in beide lijsten te zetten, dan faalt de check.",
+  "permissions": {
+    "deny": [
+      "Read(~/probe-a/**)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(//mnt/**)",
+      "Read(~/repos/**/config-a.txt)",
+      "Read(~/repos/**/submap/**)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
+    "enabledPlatforms": [
+      "wsl",
+      "linux"
+    ],
+    "filesystem": {
+      "allowManagedReadPathsOnly": true,
+      "denyRead": [
+        "~/",
+        "/mnt/",
+        "~/repos/**/config-a.txt",
+        "~/repos/**/submap"
+      ],
+      "allowRead": [
+        "~/repos",
+        "/usr",
+        "/bin",
+        "/sbin",
+        "/lib",
+        "/lib64",
+        "/etc",
+        "/opt",
+        "/tmp",
+        "/proc",
+        "/dev",
+        "~/.nvm",
+        "~/.npm",
+        "~/.gitconfig"
+      ],
+      "allowWrite": [
+        "~/repos",
+        "/tmp"
+      ]
+    },
+    "network": {
+      "_unixsockets": "Standaard blokkeert de sandbox Unix-sockets, maar dat lukt alleen met de optionele seccomp-filter (npm install -g @anthropic-ai/sandbox-runtime). Zonder die filter kan een sandboxed commando via een Unix-socket een Windows-binary starten die op de Windows-kant leest, en daar helpt denyRead op /mnt/ niet. Zet allowAllUnixSockets NIET op true tenzij je die route bewust toestaat. AC-24 meet het.",
+      "allowManagedDomainsOnly": true,
+      "allowedDomains": [
+        "registry.npmjs.org",
+        "api.nuget.org",
+        "*.nuget.org",
+        "github.com",
+        "*.githubusercontent.com",
+        "api.anthropic.com"
+      ]
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "_comment": "SLICE 2 OP LUCS EIGEN MAC - bewust smal. Doel: bewijzen dat de managed-only lock-keys werken (AC-11 t/m AC-13) zonder de rest van zijn werk te blokkeren. Plaatsen als /Library/Application Support/ClaudeCode/managed-settings.json, met sudo. Weghalen met ./unlock.sh.",
+  "_waarom_smal": "De volledige whitelist-inversie (denyRead op heel ~/) hoort NIET op deze machine. Die sluit Claude Code uit van ~/Desktop, ~/Documents en elk ander project, en met allowUnsandboxedCommands: false kun je dat niet omzeilen. Hier staan alleen de fixture-paden plus twee echte credential-mappen, zodat al het andere werk doorloopt.",
+  "_dekking": "De paden hieronder zijn precies wat AC-00p, AC-01 t/m AC-06, AC-17 t/m AC-20 en AC-22 nodig hebben. ~/.ssh en ~/.aws zijn echte mappen: Claude Code kan die tijdens deze test niet meer lezen. Dat is de bedoeling (AC-05 leunt erop) maar het raakt je gewone werk - haal ze weg als dat hindert, dan slaat run.sh AC-05 over in plaats van te falen.",
+  "_beschermd": {
+    "~/probe-a": "Read(~/probe-a/**)",
+    "~/.ssh": "Read(~/.ssh/**)",
+    "~/.aws": "Read(~/.aws/**)",
+    "~/repos/probe-7f3a91b2/deelproject/config-a.txt": "Read(~/repos/probe-7f3a91b2/deelproject/config-a.txt)",
+    "~/repos/probe-7f3a91b2/deelproject/submap": "Read(~/repos/probe-7f3a91b2/deelproject/submap/**)"
+  },
+  "_waarom_geen_network": "Geen network-blok, en met opzet. De sandbox blokkeert standaard alles wat niet in allowedDomains staat, en dat raakt ook 127.0.0.1 - waarmee de annotator-bridge op poort 8791 stukgaat. Netwerkisolatie testen we in de VM.",
+  "permissions": {
+    "deny": [
+      "Read(~/probe-a/**)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/repos/probe-7f3a91b2/deelproject/config-a.txt)",
+      "Read(~/repos/probe-7f3a91b2/deelproject/submap/**)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "failIfUnavailable": false,
+    "allowUnsandboxedCommands": false,
+    "filesystem": {
+      "_lock": "true is hier veilig: de lock negeert alleen allowRead-regels uit user- en projectsettings, en er staat geen allowRead in deze config. Alles buiten de denyRead hieronder blijft gewoon leesbaar - en AC-11 wordt wel echt getest.",
+      "allowManagedReadPathsOnly": true,
+      "denyRead": [
+        "~/probe-a",
+        "~/.ssh",
+        "~/.aws",
+        "~/probe-b",
+        "~/repos/probe-7f3a91b2/deelproject/config-a.txt",
+        "~/repos/probe-7f3a91b2/deelproject/submap"
+      ],
+      "allowWrite": [
+        "/tmp",
+        "~/repos/probe-7f3a91b2"
+      ]
+    }
+  },
+  "_ac23": "~/probe-b staat WEL in denyRead en NIET in permissions.deny, en dat is met opzet: AC-22 laat zo zien dat Bash gedekt is door de sandbox-laag, en AC-23 dat de Read-tool daar alleen een goedkeuringsvraag geeft. Zet dat pad hier niet in permissions.deny - dan tekent AC-23 het gat uit OQ-6 af als niet-bestaand."
+}
