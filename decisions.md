@@ -95,6 +95,18 @@ maar is geen vrijgavepoort. De interactieve controles in [VERIFICATIE.md](VERIFI
 zijn leidend voor de Read-laag en de Bash-probes; `selftest.sh` en `check-configs.sh` blijven
 wel volledig geautomatiseerd.
 
+## Windows-laptopproef, 22-08-2026
+
+Op een echte Windows 11-laptop (WSL 2.3.24, Ubuntu 24.04, Claude Code 2.1.240 in de distro)
+werden de geautomatiseerde acceptatietests groen ná een lokale `run.sh`-patch en na
+stille root-installaties. AC-14 en AC-21 zijn daar handmatig gedaan; AC-16, AC-23 en
+VERIFICATIE.md niet. De agent vroeg geen workspaces en liet de policy actief staan.
+
+Besluit: de kern van de sandbox is herhaalbaar op hardware, maar de handoff is pas
+agent-klaar met AskUserQuestion-poorten, een gegenereerde workspace-payload en een
+bewijsmatrix die één laptop niet als vrijgave telt. Zie
+[HANDOFF.md](HANDOFF.md#agentpoort--eerst-vragen-dan-pas-doen).
+
 ## Gemeten, 21-08-2026
 
 **wslInheritsWindowsSettings werkt — bewezen in een echte WSL2-omgeving.** Azure VM,

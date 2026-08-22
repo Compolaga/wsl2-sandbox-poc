@@ -7,6 +7,10 @@ evidence/*
 *token
 .azure-wsl2-poc-wachtwoord
 
+# Bevestigde laptop-intake en gegenereerde payloads horen niet in git.
+local/
+run.sh.origineel
+
 # Platform- en editormetadata.
 .DS_Store
 .idea/

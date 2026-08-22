@@ -44,7 +44,10 @@ een aangepaste binary draait.
 
 Achtergrond staat apart: [decisions.md](decisions.md) voor de feiten met hun bron en de
 besluiten, [open-questions.md](open-questions.md) voor wat nog open is,
-[HANDOFF.md](HANDOFF.md) voor de uitvoerbare handoff.
+[HANDOFF.md](HANDOFF.md) voor de uitvoerbare handoff. Een agent die die handoff volgt
+begint bij de **Agentpoort**: AskUserQuestion vóór installaties en vóór workspace-keuze,
+daarna [templates/proof-matrix.md](templates/proof-matrix.md). `~/repos` is geen
+organisatiekeuze.
 
 ## Voorwaarden
 
