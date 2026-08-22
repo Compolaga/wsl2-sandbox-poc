@@ -28,3 +28,4 @@ if (-not (Test-Path -LiteralPath $dir)) {
 Copy-Item -LiteralPath $Source -Destination $dest -Force
 Write-Host "geplaatst: $dest"
 Write-Host "Draai nu: wsl --shutdown"
+Write-Host "Terug:    .\\rollback-policy.ps1  (eerst de policy, pas daarna bwrap)"

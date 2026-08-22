@@ -11,10 +11,19 @@ cd "$(dirname "$0")"
   exit 2
 }
 
+[ -f local/beginstaat/dpkg.txt ] || [ -f local/beginstaat/omgeving.txt ] || {
+  echo "FOUT: local/beginstaat ontbreekt. Draai eerst ./inventaris.sh, nog vóór apt."
+  exit 2
+}
+[ -f local/snapshot.json ] || {
+  echo "FOUT: local/snapshot.json ontbreekt. Geen WSL-snapshot betekent geen proef."
+  exit 2
+}
+
 if ! command -v python3 >/dev/null; then
   if grep -q '"apt": true' local/consent.json; then
     sudo apt-get update
-    sudo apt-get install -y python3
+    sudo apt-get install -y --no-install-recommends python3
   else
     echo "FOUT: python3 ontbreekt en apt is niet goedgekeurd in local/consent.json."
     exit 2
@@ -22,6 +31,7 @@ if ! command -v python3 >/dev/null; then
 fi
 
 ./agent-gate.sh install || exit 2
+./agent-gate.sh voorbereiding || exit 2
 
 if [ "${1:-}" = "--dry-run" ]; then
   python3 - <<'PY'
@@ -50,7 +60,7 @@ fi
 if cluster apt; then
   ./agent-gate.sh install-apt || exit 2
   sudo apt-get update
-  sudo apt-get install -y bubblewrap socat python3 rsync
+  sudo apt-get install -y --no-install-recommends bubblewrap socat python3 rsync
 else
   echo "apt niet goedgekeurd; installeer bubblewrap/socat/python3/rsync niet."
 fi
@@ -61,7 +71,16 @@ if cluster nodeClaude; then
     echo "FOUT: npm ontbreekt. Installeer Node in de distro en draai dit script opnieuw."
     exit 2
   fi
-  npm install -g @anthropic-ai/claude-code @anthropic-ai/sandbox-runtime
+  if command -v claude >/dev/null; then
+    echo "claude staat er al: $(claude --version 2>/dev/null | head -1)"
+    echo "Een te oude versie is een bevinding, geen stille upgrade. Zie A10 in HANDOFF.md."
+    echo "Alleen sandbox-runtime wordt nagekeken."
+    npm install -g @anthropic-ai/sandbox-runtime
+  else
+    [ -d "$HOME/.claude" ] && cp -a "$HOME/.claude" "$HOME/.claude.voor-poc"
+    [ -e "$HOME/.claude.json" ] && cp -p "$HOME/.claude.json" "$HOME/.claude.json.voor-poc"
+    npm install -g @anthropic-ai/claude-code @anthropic-ai/sandbox-runtime
+  fi
 else
   echo "Node/Claude niet goedgekeurd; installeer ze niet."
 fi

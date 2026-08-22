@@ -72,8 +72,10 @@ aparte Windows-testlaptop**, niet onaangekondigd op een dagelijkse werkmachine. 
 `~/repos`. Op een gewone laptop betekent dat dat
 Claude Code niet meer bij andere mappen in de Linux-home of bij `/mnt/` kan — en met
 `allowUnsandboxedCommands: false` kun je dat niet omzeilen. Regel vóór plaatsing een
-Windows-adminrollback; `unlock.sh` kan het Windows-bestand niet verwijderen. De veilige
-proefroute staat bovenaan [HANDOFF.md](HANDOFF.md#veilige-proef-op-één-windows-laptop).
+Windows-adminrollback én een WSL-snapshot; `unlock.sh` kan het Windows-bestand niet
+verwijderen. De veilige proefroute en de teardown-volgorde staan in
+[HANDOFF.md](HANDOFF.md#veilige-proef-op-één-windows-laptop). Geen snapshot betekent geen
+proef.
 
 Drie dingen vangen dat af:
 

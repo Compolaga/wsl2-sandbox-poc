@@ -3,7 +3,7 @@
 set -uo pipefail
 cd "$(dirname "$0")"
 CMD="${1:-}"
-[ -n "$CMD" ] || { echo "gebruik: ./agent-gate.sh consent|intake|install|generate|bind|place|green"; exit 2; }
+[ -n "$CMD" ] || { echo "gebruik: ./agent-gate.sh consent|intake|install|generate|bind|place|green|voorbereiding"; exit 2; }
 
 case "$CMD" in
   consent|install|install-wsl|install-apt|install-node)
@@ -25,6 +25,8 @@ case "$CMD" in
   place)
     [ -f local/consent.json ] || { echo "FOUT: local/consent.json ontbreekt."; exit 2; }
     [ -f local/policy-input.json ] || { echo "FOUT: local/policy-input.json ontbreekt."; exit 2; }
+    ;;
+  voorbereiding)
     ;;
 esac
 

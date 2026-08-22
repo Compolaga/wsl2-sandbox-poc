@@ -22,7 +22,8 @@ Windows-policy zo dat hij ook geldt binnen WSL2.
 
 **Wat je nodig hebt:** dit document, de map waarin het staat (kopieer hem naar de distro —
 `agent-gate.sh`, `install-prereqs.sh`, `generate-policy.sh`, `place-policy.sh`,
-`bring-workspace.sh`, `fixture.sh`, `run.sh`, `check-configs.sh`, `unlock.sh` en `config/`
+`bring-workspace.sh`, `inventaris.sh`, `teardown.sh`, `snapshot.ps1`,
+`rollback-policy.ps1`, `fixture.sh`, `run.sh`, `check-configs.sh`, `unlock.sh` en `config/`
 horen erbij),
 [README.md](README.md#handmatige-procedures) voor de vijf handmatige procedures, en OQ-6 uit
 [open-questions.md](open-questions.md) — die heb je nodig omdat hij bepaalt wat AC-23
@@ -131,8 +132,39 @@ Windows-config zet in WSL vrijwel de hele Linux-home en `/mnt/` dicht. Repo's we
 in de **bevestigde Linux-workspaces** plus de PoC-fixtures onder `~/repos`. Een Windows-map
 die je niet hebt gekopieerd, is daarna onbruikbaar.
 
-1. **Regel de rollback vóór je de policy plaatst.** Open PowerShell als administrator en
-   maak, als het bestand al bestaat, een kopie:
+De policy-rollback is niet de machine-rollback. Op 22-08-2026 slaagde de proef (22/22 groen)
+en mislukte het terugzetten: eerst `bwrap` weg, daarna een UAC die drie keer werd
+weggeklikt, Claude Code die daarna weigerde te starten. **Geen WSL-snapshot betekent geen
+proef.** Dat is geen aanbeveling.
+
+0. **Maak een snapshot van de distro**, in PowerShell, vóór je iets installeert of plaatst:
+
+   ```powershell
+   .\snapshot.ps1 -Distro Ubuntu
+   ```
+
+   Kopieer de geschreven json naar `local/snapshot.json` in de clone in WSL. Zonder dat
+   bestand weigeren `install-prereqs.sh` en `place-policy.sh`. Terugzetten van de hele
+   distro: `.\herstel-snapshot.ps1 -Distro Ubuntu -Tar <pad> -Bevestig`.
+
+   Draai daarna in de distro, nog vóór apt of npm:
+
+   ```bash
+   ./inventaris.sh
+   ```
+
+   Dat legt `dpkg`, npm, `claude --version`, `claude auth status` en `~/.claude` vast.
+   Zonder die map is teardown archeologie.
+
+1. **Regel én bewijs de policy-rollback**, in een Windows-admin-PowerShell. Eerst een
+   round-trip die niks met de echte payload te maken heeft:
+
+   ```powershell
+   .\rollback-roundtrip.ps1
+   ```
+
+   Kopieer de marker naar `local/rollback-roundtrip.ok`. Pas daarna de marker voor het
+   echte bestand:
 
    ```powershell
    $p = "$env:ProgramFiles\ClaudeCode\managed-settings.json"
@@ -142,28 +174,20 @@ die je niet hebt gekopieerd, is daarna onbruikbaar.
    if (Test-Path $p) { Copy-Item $p $b } else { New-Item $n -ItemType File | Out-Null }
    ```
 
-   Terugdraaien doe je vanuit dezelfde administrator-PowerShell:
-
-   ```powershell
-   if (Test-Path $b) {
-     Copy-Item $b $p -Force
-     Remove-Item $b
-   } elseif (Test-Path $n) {
-     Remove-Item $p -Force -ErrorAction SilentlyContinue
-     Remove-Item $n
-   } else {
-     throw "Geen PoC-rollbackbestand of -marker gevonden"
-   }
-   wsl --shutdown
-   ```
-
-   `unlock.sh` kan het Windows-bestand alleen signaleren; het kan het niet verwijderen.
+   Terugdraaien is `.\rollback-policy.ps1`, niet het losse blok hierboven. Dat script
+   schrijft een transcript, ruimt een lege `ClaudeCode\`-map op als die er vóór de proef
+   niet was, en controleert zelf of backup en marker weg zijn. `unlock.sh` kan het
+   Windows-bestand alleen signaleren.
 
 2. **Doorloop A1 t/m A11 hieronder, ná de Agentpoort.** Installeer in de distro alleen via
    `./install-prereqs.sh` wat de gebruiker in vraag 1 heeft goedgekeurd. Minimaal nodig:
    `bubblewrap`, `socat`, `python3`, Node, Claude Code en `@anthropic-ai/sandbox-runtime`.
    Die laatste is op WSL onderdeel van de grens: zonder seccomp kan een Windows-binary
-   buiten de sandbox lezen. Log in met `claude auth login` voordat je `run.sh` gebruikt.
+   buiten de sandbox lezen.
+
+   Noteer eerst `claude auth status`. `claude auth login` **vervangt** de bestaande
+   koppeling; uitloggen zet de vorige niet terug, dat is een handmatige browserstap. Op
+   de machine van iemand anders is dat geen detail.
 
 3. **Kopieer deze hele map naar de Linux-home**, niet naar `/mnt/c`, en draai vóór er een
    policy actief is:
@@ -202,14 +226,19 @@ die je niet hebt gekopieerd, is daarna onbruikbaar.
 6. **Volg [VERIFICATIE.md](VERIFICATIE.md).** Dat is de korte hoofdroute en gebruikt
    `fixture.sh` met botsingscontrole en marker-gebaseerde cleanup. Draai daarna desgewenst
    `./fixture.sh && ./run.sh`; zorg dat `claude auth login` is afgerond en ruim altijd op
-   via de volledige sectie **Opruimen** in `VERIFICATIE.md`. Die herstelt ook een tijdelijk
-   overschreven `~/.claude/settings.json`; alleen `./fixture.sh --clean` doet dat niet.
+   via de volledige sectie **Terugdraaien** hieronder. `./fixture.sh --clean` is
+   fixture-opruiming, geen teardown.
 
 7. **Lees de bewijsmatrix** die `run.sh` naar `evidence/<stempel>/proof-matrix.md` schrijft.
    Draai bij elk onverwacht effect eerst terug. Test daarna AC-14, AC-15/16, AC-21 en AC-23.
    Deze laptopproef is geen vrijgave voor de vloot: daarvoor moet dezelfde matrix groen zijn
    op een **tweede developer-laptop**, plus OQ-1, OQ-6, proxy/package-feeds en de overige
    aannames.
+
+8. **Draai `./teardown.sh`.** Dat script kopieert eerst `evidence/` de clone uit, weigert
+   verder te gaan zolang de policy nog een sandbox eist, en ruimt daarna alleen de fixture
+   op. De rest staat in **Terugdraaien**. Zeg niet dat er is opgeruimd tot een tweede paar
+   ogen de beginstaat ernaast heeft gelegd.
 
 ## Stap 0 — controleer eerst of de aannames kloppen
 
@@ -221,14 +250,14 @@ dat het plan — bij elke aanname staat wat er dan moet gebeuren.
 |---|---|---|---|
 | A1 | Developers draaien Claude Code **in WSL2**, niet native op Windows | `wsl -l -v` in PowerShell; en in de distro `which claude` | Native Windows kent geen sandbox. Dan is de eerste stap de overstap naar WSL2, niet deze config — lees dan eerst [Bijlage A](#bijlage-a--wsl2-uitrollen-vanuit-intune). |
 | A2 | De distro is **WSL2**, niet WSL1 | `wsl -l -v` toont `VERSION 2` | Bubblewrap vraagt kernelfeatures die WSL1 niet heeft. Upgraden of geen sandbox. Beter dan controleren is afdwingen: de [WSL-settings-catalogus in Intune](https://learn.microsoft.com/en-us/windows/wsl/intune) kent onder meer *Allow WSL1*, *Allow the Inbox version of WSL*, *Allow custom kernel configuration* en *Allow the debug shell*. Zonder die policy kan een developer alsnog zelf een WSL1-distro of een eigen kernel registreren. |
-| A3 | `bubblewrap` en `socat` zijn te installeren | `which bwrap socat`, anders `sudo apt-get install bubblewrap socat` | Zonder deze twee start de sandbox niet en blokkeert `failIfUnavailable: true` het starten van Claude Code. |
+| A3 | `bubblewrap` en `socat` zijn te installeren | `which bwrap socat`, anders `./install-prereqs.sh` (apt-cluster) | Zonder deze twee start de sandbox niet en blokkeert `failIfUnavailable: true` het starten van Claude Code. `apt-get update` op een slapende distro is geen twee pakketten: op 22-08-2026 werden 167 upgrades geteld, plus `unattended-upgrades` midden in de meting. Dat is niet terug te draaien en hoort ook niet: het zijn security-updates. De distro is daarna een andere machine. Leg vóór apt de beginstaat vast (`./inventaris.sh`) en installeer met `--no-install-recommends`. |
 | A4 | Bubblewrap mag **user namespaces** maken | `sysctl kernel.apparmor_restrict_unprivileged_userns` | Geeft dit `1` (Ubuntu 24.04+), dan is een AppArmor-profiel nodig — zie hieronder. Geeft het `0` of "No such file", dan is er niets te doen. Op WSL2 bestond de sleutel in onze meting niet; controleer hem toch, zie hieronder. |
 | A5 | De **seccomp-filter** is geïnstalleerd | `npm install -g @anthropic-ai/sandbox-runtime` | Zonder deze optionele filter kan de sandbox Unix-sockets niet blokkeren, en dat is precies hoe WSL Windows-binaries start. Zie het kader hieronder — dit is geen detail. |
 | A6 | Developers hebben **geen lokale admin** op hun laptop | jullie eigen beeld van de werkplekinrichting | Met lokale admin kan een developer `C:\Program Files\ClaudeCode\` bewerken en is dit geen grens maar een vangnet. Dat is een andere belofte; zeg dat dan expliciet. |
 | A7 | Repo's staan in de **bevestigde Linux-workspaces** (vaak onder `~/work`, niet per se `~/repos`) | AskUserQuestion; daarna `bring-workspace.sh` (copy) voor Windows-mappen | De policy zet `/mnt/` dicht. Een Windows-repo blijft onbruikbaar tot hij is gekopieerd naar een Linux-pad. Bind alleen na een tweede ja. Symlink naar `/mnt/c` is geen oplossing. |
 | A8 | Uitgaand verkeer heeft **geen bedrijfsproxy** nodig | `echo $HTTPS_PROXY` in de distro | Met een proxy hoort `HTTPS_PROXY`/`NO_PROXY` in het `env`-blok van de managed settings, anders breekt de sandbox-egress. |
 | A9 | Jullie **interne package-feeds** staan in `allowedDomains` | vergelijk je NuGet/npm-config met de lijst in de config | Ontbreekt de Azure DevOps artifact-feed, dan breekt `dotnet restore` binnen de sandbox. Vul aan vóór uitrol. |
-| A10 | Claude Code is een **recente versie** en gebruikt geen third-party provider | `claude --version`; `echo $ANTHROPIC_BASE_URL $CLAUDE_CODE_USE_BEDROCK`; lees de minimumversies van `allowManagedReadPathsOnly`, `allowManagedDomainsOnly` en `wslInheritsWindowsSettings` in de [settings-documentatie](https://code.claude.com/docs/en/settings) | Een te oude versie negeert die keys stil — dan lijkt de policy te staan terwijl de lock niet werkt. Een third-party provider verandert hoe settings geladen worden. |
+| A10 | Claude Code is een **recente versie** en gebruikt geen third-party provider | `claude --version`; `echo $ANTHROPIC_BASE_URL $CLAUDE_CODE_USE_BEDROCK`; lees de minimumversies van `allowManagedReadPathsOnly`, `allowManagedDomainsOnly` en `wslInheritsWindowsSettings` in de [settings-documentatie](https://code.claude.com/docs/en/settings) | Een te oude versie is een **bevinding, geen klusje**. Rapporteer hem en stop, of upgrade bewust en noteer dat als ingreep. Een stille upgrade van 1.0.35 naar 2.1.240 veegde op 22-08-2026 `~/.claude/todos`, `projects` en `statsig` leeg via retentie (`cleanupPeriodDays` in Willems bestand). Vóór elke upgrade: `cp -a ~/.claude ~/.claude.voor-poc` en `cp -p ~/.claude.json ~/.claude.json.voor-poc`. Een third-party provider verandert hoe settings geladen worden. |
 | A11 | `python3` en `node` zijn aanwezig in de distro | `python3 --version`, `node --version` | De preflights lezen de configs met python; de acceptatietests bouwen met node. Zonder deze weigert `run.sh` te starten of slaat hij tests over. |
 
 **A4 op WSL2: waarschijnlijk niets te doen, maar meet het.** Op 21-08-2026 gemeten: in WSL2
@@ -377,17 +406,12 @@ commando waarvan de uitvoeringsmarker ontbreekt, en een Read-test waarbij niet v
 stellen is óf er gelezen is. Dat sluit niet elk denkbaar vals-groen uit — daarvoor is de
 nulmeting uit stap 1.
 
-**Ruim daarna op.** De fixture zet een bestand met de naam `bestand.txt` neer in het
-Documents van een echt Windows-profiel en testbestanden onder `~/probe-a`, `~/probe-b` en
-`~/repos/probe-7f3a91b2`. Hij raakt bestaande `~/.ssh` en `~/.aws` niet aan. Laat de
-testbestanden niet staan op een bedrijfslaptop:
-
-```bash
-./fixture.sh --clean
-```
-
-Dat verwijdert alleen bestanden die de eigen herkenningsregel dragen; alles wat er al stond
-blijft staan en wordt gemeld.
+**Ruim daarna op via [Terugdraaien](#terugdraaien), niet alleen via `fixture.sh --clean`.**
+De fixture zet een bestand met de naam `bestand.txt` neer in het Documents van een echt
+Windows-profiel en testbestanden onder `~/probe-a`, `~/probe-b` en
+`~/repos/probe-7f3a91b2`. Hij raakt bestaande `~/.ssh` en `~/.aws` niet aan. `--clean`
+verwijdert alleen wat hij zelf plantte. Lege mappen, `~/repos`, de clone, `~/.claude/`-groei
+en een OAuth-token blijven staan.
 
 Daarnaast vijf controles met de hand, omdat ze admin of een destructieve stap vragen — de
 procedures staan in [README.md](README.md#handmatige-procedures):
@@ -403,24 +427,67 @@ De vierde controle toetst de inmiddels gekozen route: `allowedMcpServers` en
 `wslInheritsWindowsSettings`. `managed-mcp.json` hoeft niet mee de distro in. Zie de
 oplossing bij OQ-5 in [open-questions.md](open-questions.md).
 
-## Als het misgaat
+## Terugdraaien
 
-Op een laptop waar de policy problemen geeft, gebruik je de rollback die je vóór de proef
-hebt klaargezet. `unlock.sh` is alleen het noodluik voor managed settings die in de distro
-zelf staan:
+Afbreken gaat in omgekeerde volgorde van opbouwen. De policy is de enige verandering die
+het gedrag van het systeem stuurt. Die gaat er als eerste af, altijd. Bestanden en pakketten
+zijn inert; een half teruggedraaide policy is dat niet.
+
+Op 22-08-2026 is eerst `bubblewrap` gepurged en daarna pas de policy weggehaald. De policy
+bleef staan (`failIfUnavailable: true`). Claude Code weigert daar nu te starten — AC-14,
+per ongeluk permanent.
+
+### Harde volgorde
+
+1. **Policy weg** met `.\rollback-policy.ps1` in een Windows-admin-PowerShell. Dat script
+   schrijft `rollback.log`. Geen log betekent: het script is niet gestart, meestal een
+   weggeklikte UAC. Plaatsen gebeurt als je oplet; terugdraaien aan het eind, als iedereen
+   denkt dat het klaar is.
+2. `wsl --shutdown`, distro opnieuw openen, **controleer dat `claude --version` weer werkt**.
+   Pas daarna mag er een pakket weg.
+3. Bewijs de clone uit: `./teardown.sh` doet dat als eerste. `evidence/` bevat lokale paden;
+   niet naar een publieke repo.
+4. Fixture weg (`./fixture.sh --clean` — zit in `teardown.sh`).
+5. Gebruikersconfig terug (`~/.claude/settings.json`, zie VERIFICATIE.md).
+6. Pas dan pakketten, en alleen wat de beginstaat als nieuw aanwijst. `apt-get` van A3 is
+   op een slapende distro geen twee pakketten; downgraden van security-updates is
+   schadelijker dan laten staan.
+7. Clone en rest weg, ná stap 3.
+
+Zonder snapshot (stap 0) herstel je de vijf onherstelbare verliezen van 22-08 niet: apt-
+upgrades, weggevaagde `~/.claude/`-historie, een vervangen auth-koppeling, groei onder
+`~/.claude/`, en een distro die materieel een andere machine is. Met snapshot:
+
+```powershell
+.\herstel-snapshot.ps1 -Distro Ubuntu -Tar $HOME\poc-snapshots\Ubuntu-voor-poc.tar -Bevestig
+```
+
+### `fixture.sh --clean` is geen teardown
+
+Na `--clean` bleven op 22-08 onder meer staan: lege `~/probe-a` en `~/probe-b`, een zelf
+aangemaakte `~/repos`, de clone inclusief `evidence/`, `~/.config/git/ignore`, extra mappen
+onder `~/.claude/` (sessions, cache, `.credentials.json` met een live token), PoC-paden in
+`~/.claude.json`, en debs in `/var/cache/apt/archives/`. Geen daarvan is dramatisch. Bij
+elkaar zijn ze het verschil tussen "opgeruimd" en opgeruimd.
+
+### Als alleen de policy in de weg zit
+
+`unlock.sh` is het noodluik voor managed settings **in de distro**:
 
 ```bash
 ./unlock.sh
 ```
 
-Dat haalt managed-settings weg die ín de distro staan, met een kopie ernaast. **In de
-uitrol die jij doet staat het bestand op de Windows-kant**, en daar komt `unlock.sh` niet
-bij: hij meldt het pad en stopt. De echte terugdraai voor één laptop is de key
-`wslInheritsWindowsSettings` uit de payload halen of het bestand met Windows-admin
-weghalen; gebruik voor de laptopproef de concrete PowerShell-rollback bovenaan dit document.
-Draai daarna altijd `wsl --shutdown`, anders kan de distro de oude policy nog vasthouden.
-Voor de hele vloot is de rollback die key uit de Intune-payload halen. De policy geldt dan
-weer alleen op de Windows-kant, precies zoals nu, en WSL2 valt terug op onbeschermd.
+**In de uitrol die jij doet staat het bestand op de Windows-kant**, en daar komt
+`unlock.sh` niet bij. Voor één laptop: `.\rollback-policy.ps1`. Voor de vloot: de key
+`wslInheritsWindowsSettings` uit de Intune-payload. Draai daarna altijd `wsl --shutdown`.
+
+### Laat ook het opruimen weerleggen
+
+Een agent die "teardown voltooid" meldt, miste op 22-08 onder meer de markerfile
+`.no-original-before-wsl2-poc`, een live token, PoC-paden in `~/.claude.json` en 167 apt-
+upgrades (gerapporteerd als "diverse"). Geef de falsifier de map uit `./inventaris.sh`.
+Zonder die referentie is teardown giswerk.
 
 ## Laat je eigen uitvoering tegenspreken
 
@@ -446,9 +513,10 @@ die hier iets opleverde:
 4. Herhaal tot er niets substantieels meer uit komt.
 
 Waar het het meest oplevert: nadat je stap 0 hebt doorlopen en je omgeving afwijkt van de
-aannames, en nadat de eerste testrun groen is. Groen is precies het moment waarop je het
-minst geneigd bent nog te kijken, en waar in deze sessie de meeste vals-groene resultaten
-zijn gevonden.
+aannames, nadat de eerste testrun groen is, en **nadat iemand "opgeruimd" heeft gezegd**.
+Groen is het moment waarop je het minst geneigd bent nog te kijken. "Opgeruimd" is dat
+ook. Op 22-08-2026 vond een falsifier veertien afwijkingen na een als voltooid gemelde
+teardown.
 
 ## Drie dingen over je huidige bestand
 

@@ -139,8 +139,28 @@ def latest_red_ok(root: Path) -> Path:
     )
 
 
+def require_voorbereiding(root: Path) -> None:
+    staat = root / "local" / "beginstaat"
+    if not ((staat / "dpkg.txt").is_file() or (staat / "omgeving.txt").is_file()):
+        raise GateError(
+            "local/beginstaat ontbreekt. Draai eerst ./inventaris.sh — "
+            "zonder beginstaat is teardown archeologie."
+        )
+    if not (root / "local" / "snapshot.json").is_file():
+        raise GateError(
+            "local/snapshot.json ontbreekt. Geen WSL-snapshot betekent geen proef. "
+            "Draai snapshot.ps1 en kopieer de json hierheen."
+        )
+
+
 def require_place(root: Path) -> dict:
     require_consent(root)
+    require_voorbereiding(root)
+    if not (root / "local" / "rollback-roundtrip.ok").is_file():
+        raise GateError(
+            "local/rollback-roundtrip.ok ontbreekt. Test de rollback eerst "
+            "met rollback-roundtrip.ps1 in een admin-PowerShell."
+        )
     intake = require_intake(root)
     require_generated(root, intake)
     latest_red_ok(root)
@@ -156,7 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument(
         "commando",
         choices=("consent", "intake", "install", "install-wsl", "install-apt", "install-node",
-                 "generate", "bind", "place", "green"),
+                 "generate", "bind", "place", "green", "voorbereiding"),
     )
     p.add_argument("--root", default=str(repo_root()))
     args = p.parse_args(argv)
@@ -182,6 +202,8 @@ def main(argv: list[str] | None = None) -> int:
             require_place(root)
         elif args.commando == "green":
             require_green(root)
+        elif args.commando == "voorbereiding":
+            require_voorbereiding(root)
     except GateError as e:
         print(f"FOUT: {e}")
         return 2

@@ -140,6 +140,29 @@ WARN
   done
 fi
 
+# ================================================================= preflight: gebroken sandbox
+# Policy die een sandbox eist plus een ontbrekende bwrap is AC-14 als blijvende staat.
+# Dat is op 22-08-2026 per ongeluk zo achtergelaten door eerst bwrap te purgen.
+if [ -n "${WSL_DISTRO_NAME:-}" ] && [ -n "$MANAGED" ] && [ -f "$MANAGED" ]; then
+  if ! command -v bwrap >/dev/null; then
+    if python3 - "$MANAGED" <<'PY'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+except Exception:
+    sys.exit(1)
+sb = d.get("sandbox") or {}
+sys.exit(0 if sb.get("enabled") and sb.get("failIfUnavailable") else 1)
+PY
+    then
+      echo "STOP. De actieve policy eist een sandbox (failIfUnavailable) maar bwrap ontbreekt."
+      echo "Claude Code start zo niet. Haal eerst de Windows-policy weg (rollback-policy.ps1)."
+      echo "Purge bwrap nooit vóór de policy."
+      exit 2
+    fi
+  fi
+fi
+
 # ================================================================= preflight: intake
 # Een groene run zonder vastgelegde workspace-keuze herhaalt de fout van 22-08-2026:
 # aanname ~/repos, statische template, claim dat de sandbox houdt. Rood mag wél zonder

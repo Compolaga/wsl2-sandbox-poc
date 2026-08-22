@@ -108,6 +108,11 @@ agent-klaar met AskUserQuestion-poorten die de scripts afdwingen (`install-prere
 workspace-payload en een bewijsmatrix die één laptop niet als vrijgave telt. Zie
 [HANDOFF.md](HANDOFF.md#agentpoort--eerst-vragen-dan-pas-doen).
 
+De teardown van diezelfde dag is mislukt: geen distro-snapshot, UAC bij terugdraaien drie
+keer weggeklikt, `bwrap` eerder weg dan de policy. Besluit: geen snapshot betekent geen
+proef; afbreken in omgekeerde volgorde; `fixture.sh --clean` is geen teardown. Zie
+[HANDOFF.md § Terugdraaien](HANDOFF.md#terugdraaien).
+
 ## Gemeten, 21-08-2026
 
 **wslInheritsWindowsSettings werkt — bewezen in een echte WSL2-omgeving.** Azure VM,

@@ -89,6 +89,11 @@ Blijft stap 1 falen, dan doet `allowManagedReadPathsOnly` zijn werk.
 
 ## Opruimen
 
+Dit herstelt de user-settings van de lockdownproef en de fixture. Het is geen teardown van
+de laptopproef. Die volgorde — eerst de policy weg, dan pas de rest — staat in
+[HANDOFF.md § Terugdraaien](HANDOFF.md#terugdraaien). `./teardown.sh` weigert verder te
+gaan zolang de Windows-policy nog een sandbox eist.
+
 ```bash
 if [ -e ~/.claude/.sandbox-poc-had-no-settings ]; then
   rm -f ~/.claude/settings.json ~/.claude/.sandbox-poc-had-no-settings

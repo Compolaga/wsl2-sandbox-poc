@@ -38,6 +38,13 @@ class GateTests(unittest.TestCase):
             "workspaces": [{"path": "/home/dev/work/a", "access": "read-write"}],
         }
 
+    def maak_voorbereiding(self):
+        staat = self.td / "local" / "beginstaat"
+        staat.mkdir(parents=True, exist_ok=True)
+        (staat / "dpkg.txt").write_text("ii  bubblewrap\n")
+        schrijf(self.td / "local" / "snapshot.json", {"distro": "Ubuntu", "tar": r"C:\snap.tar"})
+        (self.td / "local" / "rollback-roundtrip.ok").write_text("ok\n")
+
     def test_missing_consent_fails(self):
         with self.assertRaises(GateError):
             require_consent(self.td)
@@ -66,9 +73,17 @@ class GateTests(unittest.TestCase):
             require_place(self.td)
         self.assertIn("ontbreekt", str(ctx.exception))
 
+    def test_place_requires_snapshot(self):
+        schrijf(self.td / "local" / "consent.json", self.consent)
+        schrijf(self.td / "local" / "policy-input.json", self.intake)
+        with self.assertRaises(GateError) as ctx:
+            require_place(self.td)
+        self.assertIn("beginstaat", str(ctx.exception))
+
     def test_place_requires_red_and_matching_payload(self):
         schrijf(self.td / "local" / "consent.json", self.consent)
         schrijf(self.td / "local" / "policy-input.json", self.intake)
+        self.maak_voorbereiding()
         payload = {"sandbox": {"filesystem": {"allowRead": ["/home/dev/work/a"]}}}
         schrijf(self.td / "local" / "managed-settings.windows.generated.json", payload)
         with self.assertRaises(GateError) as ctx:
@@ -85,6 +100,7 @@ class GateTests(unittest.TestCase):
     def test_place_rejects_payload_missing_workspace(self):
         schrijf(self.td / "local" / "consent.json", self.consent)
         schrijf(self.td / "local" / "policy-input.json", self.intake)
+        self.maak_voorbereiding()
         schrijf(
             self.td / "local" / "managed-settings.windows.generated.json",
             {"sandbox": {"filesystem": {"allowRead": ["~/repos"]}}},
