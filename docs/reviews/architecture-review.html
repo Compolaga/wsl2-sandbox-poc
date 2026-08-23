@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="nl" xml:lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Architectuurreview — WSL2 Claude Code CLI sandbox</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Architectuurreview — WSL2 Claude Code CLI sandbox</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#rangorde" id="toc-rangorde">Rangorde</a></li>
+<li><a href="#eén-afdwingbare-plaatsingsmodule"
+id="toc-eén-afdwingbare-plaatsingsmodule">1. Eén afdwingbare
+plaatsingsmodule</a>
+<ul>
+<li><a href="#probleem" id="toc-probleem">Probleem</a></li>
+<li><a href="#richting" id="toc-richting">Richting</a></li>
+<li><a href="#waarom-dit-een-diepe-module-kan-worden"
+id="toc-waarom-dit-een-diepe-module-kan-worden">Waarom dit een diepe
+module kan worden</a></li>
+</ul></li>
+<li><a href="#eén-diep-policy-artefact"
+id="toc-eén-diep-policy-artefact">2. Eén diep policy-artefact</a>
+<ul>
+<li><a href="#probleem-1" id="toc-probleem-1">Probleem</a></li>
+<li><a href="#richting-1" id="toc-richting-1">Richting</a></li>
+</ul></li>
+<li><a href="#testcatalogus-en-bewijsledger"
+id="toc-testcatalogus-en-bewijsledger">3. Testcatalogus en
+bewijsledger</a>
+<ul>
+<li><a href="#probleem-2" id="toc-probleem-2">Probleem</a></li>
+<li><a href="#richting-2" id="toc-richting-2">Richting</a></li>
+</ul></li>
+<li><a href="#proeflevenscyclus-en-herstelstatus"
+id="toc-proeflevenscyclus-en-herstelstatus">4. Proeflevenscyclus en
+herstelstatus</a>
+<ul>
+<li><a href="#probleem-3" id="toc-probleem-3">Probleem</a></li>
+<li><a href="#richting-3" id="toc-richting-3">Richting</a></li>
+</ul></li>
+<li><a href="#bewuste-niet-aanbeveling"
+id="toc-bewuste-niet-aanbeveling">Bewuste niet-aanbeveling</a></li>
+<li><a href="#jouw-keuze" id="toc-jouw-keuze">Jouw keuze</a></li>
+</ul>
+</nav>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+:root{--ink:#17202a;--muted:#60707b;--line:#d8e1e7;--accent:#155e75;--warm:#fff7ed}html{background:#edf3f5}body{max-width:1120px;margin:32px auto;padding:48px 64px 80px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(24,32,38,.08);font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.06;letter-spacing:-.035em}h2{margin-top:2.3em;padding-top:.65em;border-top:1px solid var(--line);font-size:1.55rem}h3{font-size:1.08rem}.lede{font-size:1.12rem;color:var(--muted);max-width:820px}.verdict{background:var(--warm);border:1px solid #fed7aa;border-radius:12px;padding:18px 22px;margin:28px 0}.candidate{border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:24px 0;box-shadow:0 4px 18px rgba(24,32,38,.05)}.candidate h2{margin-top:0;border-top:0;padding-top:0}.badge{display:inline-block;padding:3px 9px;border-radius:999px;background:#cffafe;color:#155e75;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}.badge.medium{background:#fef3c7;color:#92400e}.files{color:var(--muted);font-size:.88rem}.mermaid{background:#f7fafb;border:1px solid var(--line);border-radius:10px;padding:16px;margin:14px 0;overflow-x:auto}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:.6rem;border-bottom:1px solid var(--line);vertical-align:top}th{background:#f2f6f7}code{background:#f2f5f4;border-radius:4px;padding:.12em .32em}@media(max-width:760px){body{margin:0;padding:28px 20px 72px;border:0;border-radius:0}.candidate{padding:16px}}
+</style>
+<p class="lede">
+Scan van recente hotspots, interfaces en veiligheidsinvarianten.
+Beoordeeld met de deletion test en de begrippen module, interface, seam,
+adapter, leverage en locality uit <code>codebase-design</code>.
+</p>
+<div class="verdict">
+<p><span class="badge">Topaanbeveling</span></p>
+<h2
+id="verdiep-de-proefpoort-tot-één-afdwingbare-plaatsingsmodule">Verdiep
+de proefpoort tot één afdwingbare plaatsingsmodule</h2>
+<p>De grootste architectuurwinst en het grootste veiligheidsrisico
+zitten bij de plaatsingsseam. De WSL-route controleert veel voorwaarden,
+maar de gedocumenteerde directe PowerShell-route kan het merendeel
+daarvan omzeilen. Begin hier; pak daarna de overlappende policyregels
+aan.</p>
+</div>
+<h2 id="rangorde">Rangorde</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Kandidaat</th>
+<th>Advies</th>
+<th>Waarom nu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Eén afdwingbare plaatsingsmodule</td>
+<td><strong>Sterk</strong></td>
+<td>Reële bypass en mismatch tussen gecontroleerde en gebruikte
+intake.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Eén diep policy-artefact</td>
+<td><strong>Sterk</strong></td>
+<td>Drie concurrerende implementaties van dezelfde
+veiligheidsregels.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Testcatalogus en bewijsledger</td>
+<td>Onderzoeken</td>
+<td>AC-metadata en vrijgavepoorten drijven tussen code, tekstbewijs en
+docs.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Proeflevenscyclus en herstelstatus</td>
+<td>Later onderzoeken</td>
+<td>Grote winst, maar bredere OS-seams en afhankelijk van 1 en 2.</td>
+</tr>
+</tbody>
+</table>
+<section class="candidate">
+<p><span class="badge">Sterk · eerst</span></p>
+<h2 id="eén-afdwingbare-plaatsingsmodule">1. Eén afdwingbare
+plaatsingsmodule</h2>
+<p class="files">
+<strong>Bestanden:</strong> tools/agent_gate.py, scripts/policy/agent-gate.sh,
+scripts/policy/generate-policy.sh, scripts/policy/place-policy.sh, scripts/windows/place-policy.ps1,
+tests/test_agent_gate.py
+</p>
+<h3 id="probleem">Probleem</h3>
+<p>De interface <code>place</code> lijkt klein, maar de
+veiligheidsinvarianten zijn niet aan de echte plaatsingsseam gebonden.
+<code>scripts/policy/place-policy.sh</code> gebruikt de volledige Pythonpoort;
+<code>scripts/windows/place-policy.ps1</code> is direct uitvoerbaar en controleert
+slechts bron, bestandsnaam en rollbackmarker. Consent, snapshot,
+beginstaat, bevestigde intake, payload-match en rode nulmeting zijn dan
+niet afdwingbaar. Daarnaast controleert <code>scripts/policy/generate-policy.sh</code>
+altijd <code>local/policy-input.json</code>, maar kan het daarna een
+ander intakebestand aan de generator geven.</p>
+<h3 id="richting">Richting</h3>
+<p>Laat één module het plaatsingsbesluit en de bijbehorende provenance
+bezitten. Zowel de WSL- als Windows-adapter mag alleen een door die
+module gevalideerd artefact plaatsen. PowerShell blijft een adapter aan
+de Windows-seam, geen tweede beleidspad.</p>
+<h3 id="waarom-dit-een-diepe-module-kan-worden">Waarom dit een diepe
+module kan worden</h3>
+<ul>
+<li><strong>Deletion test:</strong> verwijdering van
+<code>agent_gate.py</code> verspreidt de logica verder; de module
+verdient zijn plek maar moet meer afdwingen.</li>
+<li><strong>Leverage:</strong> dezelfde invarianten bedienen genereren,
+plaatsen en veilig hervatten.</li>
+<li><strong>Test surface:</strong> test via de echte
+plaatsingsinterface, inclusief directe PowerShell-route en mismatched
+intake.</li>
+</ul>
+<p><strong>Dependencies:</strong> in-process JSON/invarianten;
+local-substitutable files, evidence en markers; remote-but-owned
+Windows/WSL-seam; true external UAC en OS-tools.</p>
+<div class="mermaid">
+<p>flowchart LR subgraph Voor A[Intake + markers] –&gt; B[Shell gate] B
+–&gt; C[Python checks] C –&gt; D[PowerShell copy] E[Direct PowerShell]
+-. bypass .-&gt; D end subgraph Na F[Intake + snapshot + rode run] –&gt;
+G[Plaatsingsmodule] G –&gt; H[Gevalideerd artefact] H –&gt;
+I[WSL-adapter] H –&gt; J[Windows-adapter] I –&gt; K[Program Files] J
+–&gt; K end</p>
+</div>
+</section>
+<section class="candidate">
+<p><span class="badge">Sterk</span></p>
+<h2 id="eén-diep-policy-artefact">2. Eén diep policy-artefact</h2>
+<p class="files">
+<strong>Bestanden:</strong> tools/policy_generator.py, scripts/policy/check-configs.sh,
+tools/agent_gate.py, config/*.json, tests/test_policy_generator.py
+</p>
+<h3 id="probleem-1">Probleem</h3>
+<p>Eén concept — een veilige plaatsbare policy — heeft drie
+gedeeltelijke implementaties. De generator,
+<code>scripts/policy/check-configs.sh</code> en <code>payload_matches_intake</code>
+kennen elk een ander deel van locks, worteldekking en intake-match.
+Daardoor is wijziging niet lokaal. De spec zegt bovendien dat
+conflicterende bestaande security-locks de merge moeten stoppen, terwijl
+de huidige merge de meeste bestaande sandboxlocks overschrijft en
+slechts één specifieke MCP-verzwakking weigert.</p>
+<h3 id="richting-1">Richting</h3>
+<p>Maak één policy-artefactmodule eigenaar van normalisatie, veilige
+merge, invarianten, protected-path-dekking en validatie. Laat
+shellscripts dunne adapters blijven en toets gegenereerde én
+bestaande/gemergede artefacten via dezelfde interface.</p>
+<p><strong>Dependencies:</strong> voornamelijk in-process;
+local-substitutable JSON en filesystem; geen remote dependency voor
+constructie of assurance.</p>
+<div class="mermaid">
+<p>flowchart LR subgraph Voor A[Template + intake] –&gt;
+B[Generatorregels] C[Payload] –&gt; D[check-configs regels] C –&gt;
+E[Gate-regels] end subgraph Na F[Template + intake + existing] –&gt;
+G[Policy-artefactmodule] G –&gt; H[Gevalideerd artefact] H –&gt;
+I[Generate-adapter] H –&gt; J[Place-adapter] H –&gt; K[Check-adapter]
+end</p>
+</div>
+</section>
+<section class="candidate">
+<p><span class="badge medium">Onderzoeken</span></p>
+<h2 id="testcatalogus-en-bewijsledger">3. Testcatalogus en
+bewijsledger</h2>
+<p class="files">
+<strong>Bestanden:</strong> scripts/trial/run-tests.sh, scripts/lib/evaluate-result.sh, tools/report_proof.py,
+scripts/policy/report-proof.sh, scripts/trial/self-test.sh, docs/VERIFICATION.md, templates/proof-matrix.md
+</p>
+<h3 id="probleem-2">Probleem</h3>
+<p>Acceptatiecriteria, afhankelijkheden en vrijgavepoorten staan
+verspreid over arrays, losse aanroepen, een handgeschreven rapportlijst
+en documentatie. De rapportage parseert vrije tekst en leidt status
+deels af uit bestandsbestaan. De OQ-6-drift die tijdens deze scan is
+gecorrigeerd was daar een direct voorbeeld van.</p>
+<h3 id="richting-2">Richting</h3>
+<p>Laat één interne testcatalogus/bewijsledger AC-metadata,
+afhankelijkheden, statussen en vrijgavepoorten bezitten. Schrijf een
+gestructureerd runmanifest en render daaruit console-uitvoer en
+bewijsmatrix. Houd de echte Claude- en OS-probes buiten deze module als
+adapters; maak geen allesomvattende runner.</p>
+<p><strong>Dependencies:</strong> in-process statusregels;
+local-substitutable evidence; true external Claude CLI en
+Windows/WSL-probes leveren alleen waarnemingen aan.</p>
+<div class="mermaid">
+<p>flowchart LR A[Probe-adapters] –&gt; B[Testcatalogus + ledger] B
+–&gt; C[run.json] C –&gt; D[Console-samenvatting] C –&gt;
+E[Bewijsmatrix] C –&gt; F[Vrijgavepoorten]</p>
+</div>
+</section>
+<section class="candidate">
+<p><span class="badge medium">Later onderzoeken</span></p>
+<h2 id="proeflevenscyclus-en-herstelstatus">4. Proeflevenscyclus en
+herstelstatus</h2>
+<p class="files">
+<strong>Bestanden:</strong> scripts/trial/capture-baseline.sh, scripts/trial/install-prerequisites.sh,
+scripts/windows/create-snapshot.ps1, scripts/windows/test-rollback-roundtrip.ps1, scripts/windows/rollback-policy.ps1, scripts/trial/teardown.sh,
+scripts/windows/restore-snapshot.ps1, tools/agent_gate.py
+</p>
+<h3 id="probleem-3">Probleem</h3>
+<p>De state machine van snapshot via plaatsing en verificatie naar
+rollback en cleanup leeft in documentatie, losse markerfiles en
+handmatige checklists. <code>scripts/trial/teardown.sh</code> doet bewust slechts een
+deel van de teardown; het herstelresultaat wordt niet als één
+samenhangende proefstatus vastgelegd.</p>
+<h3 id="richting-3">Richting</h3>
+<p>Laat één lifecycle-statusmodule beginstaat, voltooide stappen,
+herstelbewijs en de veilige volgende stap bijhouden. Begin met
+observeren, plannen en verifiëren; automatiseer destructieve cleanup
+niet blind. Shell en PowerShell blijven adapters voor hun OS-seams.</p>
+<p><strong>Dependencies:</strong> in-process transitieregels;
+local-substitutable journal/filesystem; remote-but-owned
+WSL/Windows-host; true external apt, npm, Claude en UAC.</p>
+<div class="mermaid">
+<p>stateDiagram-v2 [*] –&gt; Geinventariseerd Geinventariseerd –&gt;
+Snapshot Snapshot –&gt; Geplaatst Geplaatst –&gt; Geverifieerd
+Geverifieerd –&gt; Teruggedraaid Teruggedraaid –&gt; Opgeruimd Geplaatst
+–&gt; HerstelNodig HerstelNodig –&gt; Teruggedraaid</p>
+</div>
+</section>
+<h2 id="bewuste-niet-aanbeveling">Bewuste niet-aanbeveling</h2>
+<p>Knip <code>scripts/trial/run-tests.sh</code> niet simpelweg op in veel kleine
+shellbestanden. Dat vergroot de interface zonder meer leverage en levert
+shallow modules op. De nuttige seam is de testcatalogus en bewijsstatus,
+niet de fysieke bestandsgrootte.</p>
+<h2 id="jouw-keuze">Jouw keuze</h2>
+<p>Mijn advies is kandidaat 1 eerst, daarna kandidaat 2. Annoteer deze
+pagina bij een kandidaat, probleemomschrijving of rangorde. Na jouw
+keuze werk ik alleen die kandidaat uit tot een concrete refactoropzet;
+pas daarna volgt implementatie.</p>
+<script>mermaid.initialize({startOnLoad:true,theme:"neutral",securityLevel:"loose"});</script>
+<!-- LUC-ANNOTATOR v2 · standaard feedback-component; plak dit blok onderaan elke HTML (voor </body> of aan het einde). Self-contained, geen dependencies. Schrijft via de lokale bridge (annotator-bridge.py, 127.0.0.1:8791) naar ~/Desktop/annotaties/<slug>/ronde-NN/. -->
+<style>
+  #la-bar { position: fixed; right: 14px; bottom: 12px; z-index: 99999; display: flex; align-items: center; gap: 6px; font-family: -apple-system, "Segoe UI", Arial, sans-serif; }
+  #la-bar button { font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid #c8ccd3; background: #fff; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  #la-bar button.la-aan { background: #16181d; color: #fff; border-color: #16181d; }
+  #la-status { font-size: 11px; padding: 5px 9px; border-radius: 999px; border: 1px solid #cfe2cf; background: #eef7ee; color: #256029; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  #la-status.la-uit { border-color: #e6c9a8; background: #fdf3e6; color: #8a4b08; cursor: help; }
+  #la-overlay { position: fixed; inset: 0; z-index: 99998; cursor: crosshair; background: rgba(20,25,35,.06); }
+  .la-ghost { position: absolute; border: 1.5px dashed #2f6bec; background: rgba(47,107,236,.12); z-index: 99998; pointer-events: none; }
+  .la-ghost-vast { border-style: solid; border-width: 2px; background: rgba(47,107,236,.16); box-shadow: 0 0 0 9999px rgba(15,20,30,.10); border-radius: 2px; }
+  .la-badge { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: #2f6bec; color: #fff; font: 700 12px/22px -apple-system, Arial, sans-serif; text-align: center; cursor: pointer; z-index: 99997; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+  .la-badge.la-tekst { background: #7a4bd6; }
+  .la-rect { position: absolute; border: 1.5px solid rgba(47,107,236,.55); background: rgba(47,107,236,.07); z-index: 99996; pointer-events: none; border-radius: 2px; }
+  .la-rect.la-tekst { border-color: rgba(122,75,214,.5); background: rgba(122,75,214,.10); }
+  /* Kaartje "waarschijnlijk verwerkt": standaard dicht, zodat het nooit het halve
+     scherm afdekt. De open/dicht-stand staat in localStorage. */
+  #la-wees { position: fixed; left: 14px; bottom: 12px; z-index: 99997; width: 300px; max-width: min(300px, calc(100vw - 380px)); background: #fff; border: 1px solid #e6c9a8; border-radius: 10px; padding: 6px 8px; box-shadow: 0 2px 10px rgba(0,0,0,.14); font: 12px/1.4 -apple-system, "Segoe UI", Arial, sans-serif; color: #8a4b08; }
+  #la-wees .la-wees-kop { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; background: none; border: 0; padding: 2px 0; font: 600 12px/1.35 -apple-system, "Segoe UI", Arial, sans-serif; color: #8a4b08; cursor: pointer; }
+  #la-wees .la-chev { transition: transform .12s ease; display: inline-block; }
+  #la-wees.la-open .la-chev { transform: rotate(90deg); }
+  #la-wees .la-wees-lijst { display: none; margin-top: 4px; max-height: 42vh; overflow: auto; }
+  #la-wees.la-open .la-wees-lijst { display: block; }
+  #la-wees .la-wees-rij { display: flex; align-items: flex-start; gap: 4px; border-top: 1px solid #f2e3cd; }
+  #la-wees .la-wees-tekst { flex: 1; text-align: left; font: 12px/1.35 -apple-system, Arial, sans-serif; background: none; border: 0; padding: 4px 0; color: #4a4f59; cursor: pointer; }
+  #la-wees .la-wees-ok { flex: none; background: none; border: 0; padding: 4px 2px; color: #256029; cursor: pointer; font-size: 13px; }
+  #la-wees .la-wees-ok:hover { color: #0f3d16; }
+  #la-wees .la-wees-uitleg { font-size: 11px; color: #a9793d; margin: 2px 0 0; }
+  #la-selknop { position: absolute; z-index: 100000; font-size: 12px; padding: 5px 10px; border-radius: 999px; border: 1px solid #7a4bd6; background: #7a4bd6; color: #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.25); font-family: -apple-system, "Segoe UI", Arial, sans-serif; }
+  #la-popup { position: absolute; z-index: 100000; width: 340px; background: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.25); padding: 12px; font-family: -apple-system, "Segoe UI", Arial, sans-serif; }
+  #la-popup textarea { width: 100%; min-height: 70px; border: 1px solid #d9dce2; border-radius: 8px; padding: 8px; font: 13px/1.4 -apple-system, Arial, sans-serif; resize: vertical; box-sizing: border-box; }
+  #la-popup .la-quote { font-size: 12px; color: #4a4f59; background: #f4f2fb; border-left: 3px solid #7a4bd6; padding: 6px 8px; border-radius: 4px; margin-bottom: 8px; max-height: 70px; overflow: auto; }
+  #la-popup .la-img { max-width: 100%; max-height: 120px; display: block; margin-top: 6px; border-radius: 6px; border: 1px solid #e2e5ea; }
+  #la-popup .la-rij { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+  #la-popup .la-rij .la-spacer { flex: 1; }
+  #la-popup button { font-size: 12px; padding: 6px 12px; border-radius: 999px; border: 1px solid #c8ccd3; background: #fff; cursor: pointer; }
+  #la-popup button.la-save { background: #16181d; color: #fff; border-color: #16181d; }
+  #la-popup .la-hint { font-size: 11px; color: #8a8f99; margin-top: 6px; }
+  #la-popup .la-hint.la-waarschuwing { color: #8a4b08; }
+
+  /* Concept-berichtkaart: een nog niet verstuurd bericht, zo weergegeven dat Luc
+     er per zin op kan annoteren. Zie SKILL.md deel 5. Vlakke la-draft-*-namen,
+     geen nesting, zodat pagina-eigen .hdr/.txt/.na niet botsen. Kleuren vallen
+     terug op een default als de pagina --ink/--muted niet definieert. */
+  .la-draft { background: #fffdf7; border: 1px solid #e8dcc0; border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; }
+  .la-draft-hdr { font-size: 13px; color: var(--muted, #6b6b66); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eee4cd; }
+  .la-draft-hdr b { color: var(--ink, #1c1c1a); }
+  .la-draft-txt { font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; white-space: pre-wrap; }
+  /* Knop die een verse Claude Code-sessie opent met de context van dit punt.
+     Zie de skill nieuwe-sessie. */
+  .la-sessie { display: inline-block; margin-top: 2px; font-size: 13px; text-decoration: none;
+    padding: 5px 11px; border-radius: 999px; border: 1px solid #c8ccd3; background: #fff;
+    color: #16181d; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .la-sessie:hover { background: #16181d; color: #fff; border-color: #16181d; }
+  .la-sessie::before { content: "\2197\00a0"; }
+  .la-sesmeld { position: fixed; left: 14px; bottom: 56px; z-index: 100001; max-width: 340px;
+    background: #16181d; color: #fff; border-radius: 10px; padding: 10px 12px;
+    font: 12px/1.45 -apple-system, "Segoe UI", Arial, sans-serif;
+    box-shadow: 0 3px 14px rgba(0,0,0,.28); }
+  .la-sesmeld.la-fout { background: #7a3b06; }
+  /* Tracked changes op een conceptbericht: Luc herschrijft de tekst zelf en het
+     verschil met de oorspronkelijke versie wordt de annotatie. */
+  .la-draft-txt.la-bewerkbaar { border-radius: 4px; outline: 1px dashed transparent;
+    outline-offset: 5px; transition: outline-color .12s ease; cursor: text; }
+  .la-draft-txt.la-bewerkbaar:hover { outline-color: #d8cdb0; }
+  .la-draft-txt.la-bewerkbaar:focus { outline: 2px solid #7a5cff; outline-offset: 5px;
+    background: #fffdf6; }
+  .la-draft-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px;
+    font: 12px/1.4 -apple-system, "Segoe UI", Arial, sans-serif; }
+  .la-draft-bar button { font: inherit; padding: 4px 11px; border-radius: 999px;
+    border: 1px solid #c8ccd3; background: #fff; color: #16181d; cursor: pointer; }
+  .la-draft-bar button:hover { border-color: #16181d; }
+  .la-draft-bar button.la-actief { background: #16181d; color: #fff; border-color: #16181d; }
+  .la-draft-bar .la-draft-meld { color: #6b6b66; }
+  .la-draft-txt .la-hunk-nr { font-size: 10px; font-weight: 700; color: #7a5cff;
+    vertical-align: super; padding: 0 2px; user-select: none; }
+  .la-draft-txt ins { background: #dcfce7; color: #14532d; text-decoration: underline;
+    text-decoration-thickness: 1px; }
+  .la-draft-txt del { background: #fee2e2; color: #7f1d1d; text-decoration: line-through; }
+  .la-draft-na { font-size: 13px; color: var(--muted, #6b6b66); margin-top: 12px; padding-top: 10px; border-top: 1px solid #eee4cd; }
+
+  /* Geneste subpunten: elk niveau springt een stap verder in en krijgt een haakje
+     naar zijn ouder, zodat een lijst met subtaken op het oog te lezen is. Zie
+     SKILL.md deel 7. Hangt bewust aan niets anders dan de eigen klasse — geen
+     .card of andere pagina-klasse — zodat het op elk blok-element werkt (kaart,
+     li, div). De lijnkleur volgt --line als de pagina die definieert, met een
+     lichte fallback zodat het haakje ook zonder tokens zichtbaar is. */
+  .la-sub, .la-sub2, .la-sub3, .la-sub4 {
+    --la-diepte: 1;
+    position: relative;
+    margin-left: calc(var(--la-diepte) * var(--la-stap, 30px));
+  }
+  .la-sub2 { --la-diepte: 2 }
+  .la-sub3 { --la-diepte: 3 }
+  .la-sub4 { --la-diepte: 4 }
+  .la-sub::before, .la-sub2::before, .la-sub3::before, .la-sub4::before {
+    content: ""; position: absolute;
+    left: calc(-0.53 * var(--la-stap, 30px));
+    width: calc(0.47 * var(--la-stap, 30px));
+    top: -10px; bottom: 50%;
+    border-left: 2px solid var(--line, #d8d8d2);
+    border-bottom: 2px solid var(--line, #d8d8d2);
+    border-bottom-left-radius: 8px;
+  }
+</style>
+<script>
+(function () {
+  "use strict";
+  var BRIDGE = "http://127.0.0.1:8791";
+  var KEY = "luc-annotaties:" + location.pathname;
+  var anns = [];
+  try { anns = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) {}
+  var teller = anns.reduce(function (m, a) { return Math.max(m, a.nr || 0); }, 0);
+  var brug = { ok: false, jsonPath: null, count: 0, round: null };
+
+  function bewaarLokaal() { try { localStorage.setItem(KEY, JSON.stringify(anns)); } catch (e) {} }
+  function el(tag, css, ouder) { var d = document.createElement(tag); if (css) d.style.cssText = css; (ouder || document.body).appendChild(d); return d; }
+  function slug() { return (document.title || location.pathname).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "pagina"; }
+  function paginaBestand() {
+    if (location.protocol === "file:") {
+      try { return decodeURIComponent(location.pathname); } catch (e) { return location.pathname; }
+    }
+    /* via de bridge geserveerd: http://127.0.0.1:8791/p/<pad-vanaf-home> */
+    var m = location.pathname.match(/^\/p\/(.+)$/);
+    if (m && (location.hostname === "127.0.0.1" || location.hostname === "localhost")) {
+      try { return "~/" + decodeURIComponent(m[1]); } catch (e) { return "~/" + m[1]; }
+    }
+    return null;
+  }
+  function domHash() {
+    var h = 5381, s = document.body ? document.body.innerText || "" : "";
+    for (var i = 0; i < s.length; i++) { h = ((h << 5) + h + s.charCodeAt(i)) | 0; }
+    return (h >>> 0).toString(16);
+  }
+  /* eenmalig, vóór de annotator zelf iets in de DOM zet: anders veranderen
+     badges en de statuspil de hash en denkt de bridge dat het een nieuwe ronde is */
+  var DOMHASH = domHash();
+  function basis() {
+    return {
+      page: location.href, pageFile: paginaBestand(), slug: slug(), title: document.title,
+      domHash: DOMHASH,
+      doc: { w: document.documentElement.scrollWidth, h: document.documentElement.scrollHeight }
+    };
+  }
+
+  /* ---- bridge-communicatie -------------------------------------- */
+  function post(pad, body) {
+    return fetch(BRIDGE + pad, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j || !j.ok) throw new Error((j && j.error) || "bridge-fout");
+      return j;
+    });
+  }
+  function zetStatus(aan, tekst, titel) {
+    var s = document.getElementById("la-status");
+    if (!s) return;
+    s.classList.toggle("la-uit", !aan);
+    s.textContent = tekst;
+    s.title = titel || "";
+  }
+  /* De bridge is leidend zodra hij bereikbaar is: hij levert de open (niet-resolved)
+     annotaties van de lopende ronde, en die vervangen de lokale lijst. Zo verdwijnen
+     verwerkte annotaties na een refresh en blijven de rest gewoon staan. Zonder
+     bridge blijft localStorage het vangnet. */
+  function uitBridge(j) {
+    if (!j || !Array.isArray(j.annotations)) return;
+    anns = j.annotations.map(function (a) {
+      return {
+        id: a.id, nr: a.nr, type: a.type || "region",
+        rect: a.rect || null, comment: a.comment || "", target: a.target || "",
+        selectedText: a.selectedText || "", img: null,
+        veld: a.veld || "", origineel: a.origineel || "", nieuw: a.nieuw || "",
+        diff: a.diff || [], hunks: a.hunks || [],
+        createdAt: a.createdAt, stale: !!a.stale
+      };
+    });
+    teller = Math.max(j.maxNr || 0, anns.reduce(function (m, a) { return Math.max(m, a.nr || 0); }, 0));
+    bewaarLokaal(); render();
+  }
+
+  function verversSessie() {
+    return post("/session", basis()).then(function (j) {
+      /* Nieuwe ronde op schijf? Dan horen de badges van de vorige ronde hier niet
+         meer thuis: die staan al veilig in hun eigen rondemap. Lokaal opschonen,
+         anders blijven oude markeringen op verschoven posities hangen. */
+      var vorige = null;
+      try { vorige = JSON.parse(localStorage.getItem(KEY + ":ronde") || "null"); } catch (e) {}
+      if (vorige !== null && vorige !== j.round) {
+        anns = []; teller = 0;
+        try { localStorage.setItem(KEY, "[]"); } catch (e) {}
+        render();
+      }
+      try { localStorage.setItem(KEY + ":ronde", JSON.stringify(j.round)); } catch (e) {}
+      uitBridge(j);
+      brug.ok = true; brug.jsonPath = j.jsonPath; brug.count = j.count; brug.round = j.round;
+      zetStatus(true, j.count + " annotaties opgeslagen", j.jsonPath);
+      return j;
+    }).catch(function () {
+      brug.ok = false; brug.jsonPath = null;
+      zetStatus(false, "bridge uit - alleen localStorage",
+        "Start de bridge: python3 ~/.claude/skills/html-annotator/annotator-bridge.py");
+      return null;
+    });
+  }
+
+  /* ---- knoppenbalk ---------------------------------------------- */
+  var bar = document.createElement("div"); bar.id = "la-bar";
+  bar.innerHTML = '<span id="la-status">bridge checken...</span>' +
+    '<button id="la-toggle">&#9998; Annotate selection</button>';
+  document.body.appendChild(bar);
+
+  /* ---- anker terugvinden na een pagina-wijziging ------------------ */
+  function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+  /* Zoekt de opgeslagen selectie terug in de huidige DOM en geeft de nieuwe
+     paginacoördinaten. Zo blijven tekstannotaties kloppen als er tekst boven is
+     bijgekomen of weggevallen. Niet gevonden? Dan is de annotatie een "wees". */
+  function zoekTekst(needle) {
+    var doel = (needle || "").replace(/\s+/g, " ").trim().slice(0, 300);
+    if (doel.length < 3) return null;
+
+    /* Alle zichtbare tekstnodes achter elkaar in één string, met een index terug
+       naar (node, offset). Dat is nodig om twee redenen:
+       - een selectie kan over meerdere nodes lopen zodra er opmaak in staat
+         (<b>, <a>, <code>), en per node zoeken vindt zo'n zin nooit;
+       - bij text-transform: uppercase levert de selectie HOOFDLETTERS op terwijl
+         de DOM de originele schrijfwijze bevat, dus matchen we hoofdletter-
+         ongevoelig. */
+    var nodes = [], stukken = [], lengte = 0, n;
+    var loper = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (k) {
+        if (!k.nodeValue) return NodeFilter.FILTER_REJECT;
+        var p = k.parentElement;
+        if (!p || p.closest("#la-bar,#la-popup,#la-wees,#la-sesmeld,script,style,noscript")) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    while ((n = loper.nextNode())) {
+      nodes.push({ node: n, start: lengte, lengte: n.nodeValue.length });
+      stukken.push(n.nodeValue);
+      lengte += n.nodeValue.length;
+    }
+    if (!nodes.length) return null;
+    var hooi = stukken.join("");
+
+    var re;
+    try {
+      re = new RegExp(doel.split(/\s+/).map(escRe).join("\\s+"), "i");
+    } catch (e) { return null; }
+    var m = re.exec(hooi);
+    if (!m) return null;
+
+    function plek(pos) {
+      for (var i = 0; i < nodes.length; i++) {
+        var e = nodes[i];
+        if (pos >= e.start && pos <= e.start + e.lengte) {
+          return { node: e.node, offset: pos - e.start };
+        }
+      }
+      return null;
+    }
+    var van = plek(m.index), tot = plek(m.index + m[0].length);
+    if (!van || !tot) return null;
+    try {
+      var r = document.createRange();
+      r.setStart(van.node, van.offset);
+      r.setEnd(tot.node, tot.offset);
+      var b = r.getBoundingClientRect();
+      if (!b.width && !b.height) return null;
+      return { x: Math.round(b.left + scrollX), y: Math.round(b.top + scrollY),
+               w: Math.round(b.width), h: Math.round(b.height) };
+    } catch (e) { return null; }
+  }
+
+  /* ---- tekenen --------------------------------------------------- */
+  /* Een annotatie verliest haar anker precies doordat de tekst is aangepast: dat
+     is eerder het signaal dat ze verwerkt IS dan een foutmelding. Daarom staat het
+     kaartje er als "waarschijnlijk verwerkt, afvinken?" met per regel een vinkje,
+     en niet als alarm. Standaard ingeklapt (stand in localStorage). */
+  var WEESKEY = KEY + ":wees-open";
+  function weesOpen() {
+    try { return localStorage.getItem(WEESKEY) === "1"; } catch (e) { return false; }
+  }
+  function toonWezen(lijst) {
+    var oud = document.getElementById("la-wees"); if (oud) oud.remove();
+    if (!lijst.length) return;
+    var box = document.createElement("div"); box.id = "la-wees";
+    if (weesOpen()) box.classList.add("la-open");
+    var kop = document.createElement("button");
+    kop.className = "la-wees-kop";
+    kop.innerHTML = '<span class="la-chev">&#9656;</span><span class="la-wees-tel"></span>';
+    kop.querySelector(".la-wees-tel").textContent =
+      lijst.length + " annotatie" + (lijst.length > 1 ? "s" : "") + " waarschijnlijk verwerkt";
+    kop.title = "Anker niet meer gevonden op de pagina. Klik om te bekijken en af te vinken.";
+    kop.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      var nu = !box.classList.contains("la-open");
+      box.classList.toggle("la-open", nu);
+      try { localStorage.setItem(WEESKEY, nu ? "1" : "0"); } catch (e) {}
+    });
+    box.appendChild(kop);
+    var lijstEl = document.createElement("div"); lijstEl.className = "la-wees-lijst";
+    var uitleg = document.createElement("p"); uitleg.className = "la-wees-uitleg";
+    uitleg.textContent = "Anker weg na een paginawijziging. Vink af (✓) wat verwerkt is.";
+    lijstEl.appendChild(uitleg);
+    lijst.forEach(function (a) {
+      var rij = document.createElement("div"); rij.className = "la-wees-rij";
+      var b = document.createElement("button"); b.className = "la-wees-tekst";
+      b.textContent = "#" + a.nr + " · " + ((a.comment || a.selectedText || a.target || "").slice(0, 70) || "(geen tekst)");
+      b.addEventListener("click", function (ev) { ev.stopPropagation(); openPopup(a); });
+      var ok = document.createElement("button"); ok.className = "la-wees-ok";
+      ok.innerHTML = "&#10003;"; ok.title = "Markeer als verwerkt (blijft in de historie staan)";
+      ok.addEventListener("click", function (ev) { ev.stopPropagation(); markeerVerwerkt(a); });
+      rij.appendChild(b); rij.appendChild(ok);
+      lijstEl.appendChild(rij);
+    });
+    box.appendChild(lijstEl);
+    document.body.appendChild(box);
+    mijdKnoppenbalk(box);
+  }
+  /* De knoppenbalk rechtsonder is breed en groeit mee met zijn tekst; op een smal
+     venster botst het kaartje ertegenaan. Meten en het kaartje er dan boven zetten. */
+  function mijdKnoppenbalk(box) {
+    box = box || document.getElementById("la-wees");
+    var bar = document.getElementById("la-bar");
+    if (!box || !bar) return;
+    box.style.bottom = "12px";
+    var b = box.getBoundingClientRect(), k = bar.getBoundingClientRect();
+    if (b.right > k.left && b.bottom > k.top) {
+      box.style.bottom = Math.round(innerHeight - k.top + 8) + "px";
+    }
+  }
+  addEventListener("resize", function () { mijdKnoppenbalk(); });
+
+  /* Badges hangen aan gemeten posities, dus ze moeten mee zodra de layout
+     verschuift. Dat gebeurt bij het laden van fonts en afbeeldingen, bij een
+     resize, en vooral zodra een <details> open- of dichtklapt: alles eronder
+     schuift dan, en zonder hertekenen wijzen de badges naar het verkeerde stuk
+     of lijken ze zelfs kwijt. */
+  var hertekenTimer = null, bezigMetTekenen = false;
+  function herteken() {
+    if (bezigMetTekenen) return;
+    clearTimeout(hertekenTimer);
+    hertekenTimer = setTimeout(function () {
+      bezigMetTekenen = true;
+      try { render(); } finally {
+        setTimeout(function () { bezigMetTekenen = false; }, 0);
+      }
+    }, 60);
+  }
+  addEventListener("load", herteken);
+  addEventListener("resize", herteken);
+  /* toggle bubbelt niet, dus in de capture-fase meeluisteren */
+  document.addEventListener("toggle", function (ev) {
+    if (ev.target && ev.target.tagName === "DETAILS") herteken();
+  }, true);
+  if (window.ResizeObserver) {
+    try { new ResizeObserver(herteken).observe(document.body); } catch (e) {}
+  }
+
+  function render() {
+    document.querySelectorAll(".la-badge,.la-rect").forEach(function (n) { n.remove(); });
+    var wezen = [];
+    anns.forEach(function (a) {
+      var rect = a.rect;
+      /* Bewerkingen van een conceptbericht hebben geen plek op de pagina: ze zijn al
+         zichtbaar in de kaart zelf, als doorhaling en onderstreping. Een badge zou
+         nergens op slaan, en zonder rechthoek zouden ze in de weeslijst belanden en
+         daar als "waarschijnlijk verwerkt" gaan staan terwijl er niets aan de hand is. */
+      if (a.type === "edit") { return; }
+      /* tekstannotaties: anker opnieuw opzoeken op basis van de selectie zelf */
+      if (a.type === "text" && a.selectedText) {
+        var nieuw = zoekTekst(a.selectedText);
+        if (nieuw) { a.rect = rect = nieuw; }
+        else { wezen.push(a); return; }
+      } else if (a.stale) {
+        /* regio-annotatie van een oudere paginaversie: coördinaten zijn verdacht */
+        wezen.push(a); return;
+      }
+      if (!rect || (!rect.w && !rect.h)) { wezen.push(a); return; }
+      var tekst = a.type === "text";
+      var r = el("div"); r.className = "la-rect" + (tekst ? " la-tekst" : "");
+      r.style.left = rect.x + "px"; r.style.top = rect.y + "px";
+      r.style.width = rect.w + "px"; r.style.height = rect.h + "px";
+      var b = el("div"); b.className = "la-badge" + (tekst ? " la-tekst" : ""); b.textContent = a.nr;
+      b.style.left = (rect.x + rect.w - 8) + "px"; b.style.top = (rect.y - 12) + "px";
+      b.title = a.comment || "";
+      b.addEventListener("click", function (ev) { ev.stopPropagation(); openPopup(a); });
+    });
+    toonWezen(wezen);
+  }
+
+  /* ---- popup ----------------------------------------------------- */
+  var popup = null, hangendeGhost = null;
+  function ruimGhostOp() { if (hangendeGhost) { hangendeGhost.remove(); hangendeGhost = null; } }
+  function sluitPopup() { if (popup) { popup.remove(); popup = null; } ruimGhostOp(); }
+  function openPopup(a) {
+    /* alleen de popup sluiten, niet de zojuist vastgezette selectie opruimen */
+    if (popup) { popup.remove(); popup = null; }
+    popup = document.createElement("div"); popup.id = "la-popup";
+    /* annotaties zonder bruikbaar anker openen gewoon in beeld */
+    var pr = (a.rect && (a.rect.w || a.rect.h)) ? a.rect
+      : { x: scrollX + 20, y: scrollY + 60, w: 0, h: 0 };
+    popup.style.left = Math.max(8, Math.min(pr.x, document.documentElement.scrollWidth - 360)) + "px";
+    popup.style.top = (pr.y + pr.h + 10) + "px";
+    popup.innerHTML =
+      (a.type === "text" ? '<div class="la-quote"></div>' : "") +
+      '<textarea placeholder="Schrijf je comment... (⌘↵ opslaan, afbeelding plakken mag ook)"></textarea>' +
+      '<div class="la-imgwrap"></div>' +
+      '<div class="la-rij">' +
+      '<button class="la-del" title="Verwijder">&#128465;</button>' +
+      '<button class="la-attach" title="Afbeelding toevoegen">&#128206;</button>' +
+      '<button class="la-done" title="Markeer als verwerkt (blijft in de historie)">&#10003;</button>' +
+      '<span class="la-spacer"></span>' +
+      '<button class="la-cancel">Cancel</button>' +
+      '<button class="la-save">Save</button></div>' +
+      '<div class="la-hint"></div>';
+    document.body.appendChild(popup);
+    if (a.type === "text") popup.querySelector(".la-quote").textContent = a.selectedText || "";
+    var hint = popup.querySelector(".la-hint");
+    if (brug.ok) {
+      hint.textContent = a.type === "text"
+        ? "Wordt direct opgeslagen in ronde " + brug.round + " (tekst, geen screenshot)."
+        : "Wordt direct opgeslagen in ronde " + brug.round + " met screenshot-crop.";
+    } else {
+      hint.className = "la-hint la-waarschuwing";
+      hint.textContent = "Bridge draait niet: alleen localStorage, nog niets op schijf.";
+    }
+    var ta = popup.querySelector("textarea"); ta.value = a.comment || "";
+    var wrap = popup.querySelector(".la-imgwrap");
+    function toonImg() { wrap.innerHTML = a.img ? '<img class="la-img" src="' + a.img + '">' : ""; }
+    toonImg();
+    ta.addEventListener("paste", function (ev) {
+      var items = (ev.clipboardData || {}).items || [];
+      for (var i = 0; i < items.length; i++) if (items[i].type.indexOf("image") === 0) {
+        var fr = new FileReader();
+        fr.onload = function () { a.img = fr.result; toonImg(); };
+        fr.readAsDataURL(items[i].getAsFile()); ev.preventDefault();
+      }
+    });
+    popup.querySelector(".la-attach").addEventListener("click", function () {
+      var inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
+      inp.onchange = function () {
+        if (!inp.files[0]) return;
+        var fr = new FileReader();
+        fr.onload = function () { a.img = fr.result; toonImg(); };
+        fr.readAsDataURL(inp.files[0]);
+      };
+      inp.click();
+    });
+    popup.querySelector(".la-del").addEventListener("click", function () {
+      verwijder(a); sluitPopup();
+    });
+    popup.querySelector(".la-done").addEventListener("click", function () {
+      markeerVerwerkt(a); sluitPopup();
+    });
+    popup.querySelector(".la-cancel").addEventListener("click", function () { render(); sluitPopup(); });
+    function opslaan() {
+      a.comment = ta.value.trim();
+      bewaarAnnotatie(a); sluitPopup();
+    }
+    popup.querySelector(".la-save").addEventListener("click", opslaan);
+    /* Cmd+Enter (of Ctrl+Enter) slaat op, Escape annuleert */
+    ta.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter" && (ev.metaKey || ev.ctrlKey)) {
+        ev.preventDefault(); ev.stopPropagation(); opslaan();
+      } else if (ev.key === "Escape") {
+        ev.preventDefault(); ev.stopPropagation(); render(); sluitPopup();
+      }
+    });
+    ta.focus();
+  }
+
+  /* ---- opslaan / verwijderen ------------------------------------- */
+  function bewaarAnnotatie(a) {
+    if (!anns.some(function (x) { return x.id === a.id; })) anns.push(a);
+    bewaarLokaal(); render();
+    return post("/save", Object.assign(basis(), {
+      annotation: {
+        id: a.id, type: a.type, rect: a.rect, comment: a.comment, target: a.target,
+        selectedText: a.selectedText || null, img: a.img || null, createdAt: a.createdAt,
+        /* bewerkingen op een conceptbericht; leeg voor de andere types */
+        veld: a.veld || null, origineel: a.origineel || null, nieuw: a.nieuw || null,
+        diff: a.diff || null, hunks: a.hunks || null
+      }
+    })).then(function (j) {
+      brug.ok = true; brug.jsonPath = j.jsonPath; brug.count = j.count; brug.round = j.round;
+      a.nr = j.nr; bewaarLokaal(); render();
+      zetStatus(true, j.count + " annotaties opgeslagen", j.jsonPath);
+      return j;
+    }).catch(function (e) {
+      brug.ok = false;
+      zetStatus(false, "bridge uit - alleen localStorage",
+        "Start de bridge: python3 ~/.claude/skills/html-annotator/annotator-bridge.py");
+      alert("Let op: de bridge draait niet, dus er staat niets op schijf.\n" +
+        "Je annotatie zit alleen in localStorage. Start de bridge met:\n" +
+        "python3 ~/.claude/skills/html-annotator/annotator-bridge.py\n" +
+        "of gebruik 'Bewaar feedback' voor een download.");
+      throw e;
+    });
+  }
+
+  function verwijder(a) {
+    anns = anns.filter(function (x) { return x.id !== a.id; });
+    bewaarLokaal(); render();
+    return post("/delete", Object.assign(basis(), { id: a.id })).then(function (j) {
+      brug.count = j.count;
+      zetStatus(true, j.count + " annotaties opgeslagen", j.jsonPath);
+    }).catch(function () { /* offline: localStorage is al bijgewerkt */ });
+  }
+
+  /* Verwerkt afvinken: nooit weggooien, alleen resolved zetten in de JSON. De
+     annotatie verdwijnt van de pagina, de historie blijft op schijf staan. */
+  function markeerVerwerkt(a) {
+    if (!brug.ok) {
+      alert("De bridge draait niet, dus afvinken kan niet worden weggeschreven.\n" +
+        "Start hem met: ~/.claude/skills/html-annotator/ensure-bridge.sh");
+      return Promise.resolve(null);
+    }
+    return post("/resolve", Object.assign(basis(), { ids: [a.id], nrs: [a.nr] }))
+      .then(function (j) {
+        anns = anns.filter(function (x) { return x.id !== a.id; });
+        bewaarLokaal(); render();
+        brug.count = j.open;
+        zetStatus(true, j.open + " annotaties opgeslagen", j.jsonPath);
+        return j;
+      }).catch(function (e) {
+        alert("Afvinken mislukt: " + (e && e.message ? e.message : e));
+        throw e;
+      });
+  }
+
+  /* ---- regio-selectie (snipping) --------------------------------- */
+  var overlay = null, start = null, ghost = null;
+  function tekstBij(rect) {
+    var e = document.elementFromPoint(
+      Math.max(0, Math.min(innerWidth - 2, rect.x + rect.w / 2 - scrollX)),
+      Math.max(0, Math.min(innerHeight - 2, rect.y + 12 - scrollY)));
+    var t = e ? (e.innerText || e.textContent || "") : "";
+    return t.replace(/\s+/g, " ").trim().slice(0, 120);
+  }
+  function zetModus(aan) {
+    document.getElementById("la-toggle").classList.toggle("la-aan", aan);
+    if (!aan) { if (overlay) overlay.remove(); overlay = null; return; }
+    overlay = document.createElement("div"); overlay.id = "la-overlay";
+    document.body.appendChild(overlay);
+    overlay.addEventListener("mousedown", function (ev) {
+      start = { x: ev.pageX, y: ev.pageY };
+      ghost = el("div"); ghost.className = "la-ghost";
+    });
+    overlay.addEventListener("mousemove", function (ev) {
+      if (!start || !ghost) return;
+      var x = Math.min(start.x, ev.pageX), y = Math.min(start.y, ev.pageY);
+      ghost.style.left = x + "px"; ghost.style.top = y + "px";
+      ghost.style.width = Math.abs(ev.pageX - start.x) + "px";
+      ghost.style.height = Math.abs(ev.pageY - start.y) + "px";
+    });
+    overlay.addEventListener("mouseup", function (ev) {
+      if (!start) return;
+      var rect = {
+        x: Math.round(Math.min(start.x, ev.pageX)), y: Math.round(Math.min(start.y, ev.pageY)),
+        w: Math.round(Math.abs(ev.pageX - start.x)), h: Math.round(Math.abs(ev.pageY - start.y))
+      };
+      start = null;
+      var g = ghost; ghost = null;
+      zetModus(false);
+      if (rect.w < 8 || rect.h < 8) { if (g) g.remove(); return; }
+      /* de selectie blijft staan zolang de comment-popup open is */
+      ruimGhostOp();
+      if (g) { g.classList.add("la-ghost-vast"); hangendeGhost = g; }
+      teller += 1;
+      openPopup({
+        id: Date.now() + "-" + teller, nr: teller, type: "region", rect: rect,
+        target: tekstBij(rect), comment: "", img: null,
+        createdAt: new Date().toISOString()
+      });
+    });
+  }
+  document.getElementById("la-toggle").addEventListener("click", function () { zetModus(!overlay); });
+
+  /* ---- tekstselectie --------------------------------------------- */
+  var selKnop = null;
+  function verbergSelKnop() { if (selKnop) { selKnop.remove(); selKnop = null; } }
+  function huidigeSelectie() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+    var tekst = sel.toString().replace(/\s+/g, " ").trim();
+    if (tekst.length < 2) return null;
+    var node = sel.anchorNode;
+    var host = node && (node.nodeType === 1 ? node : node.parentElement);
+    if (host && host.closest && host.closest("#la-popup,#la-bar")) return null;
+    var r = sel.getRangeAt(0).getBoundingClientRect();
+    if (!r.width && !r.height) return null;
+    return {
+      tekst: tekst,
+      rect: { x: Math.round(r.left + scrollX), y: Math.round(r.top + scrollY),
+              w: Math.round(r.width), h: Math.round(r.height) }
+    };
+  }
+  document.addEventListener("mouseup", function () {
+    setTimeout(function () {
+      if (overlay || popup) return;
+      var s = huidigeSelectie();
+      verbergSelKnop();
+      if (!s) return;
+      selKnop = document.createElement("button");
+      selKnop.id = "la-selknop"; selKnop.textContent = "✎ Annoteer selectie";
+      selKnop.style.left = s.rect.x + "px";
+      selKnop.style.top = (s.rect.y + s.rect.h + 6) + "px";
+      document.body.appendChild(selKnop);
+      selKnop.addEventListener("mousedown", function (ev) { ev.preventDefault(); });
+      selKnop.addEventListener("click", function (ev) {
+        ev.stopPropagation(); verbergSelKnop();
+        teller += 1;
+        openPopup({
+          id: Date.now() + "-" + teller, nr: teller, type: "text", rect: s.rect,
+          selectedText: s.tekst, target: s.tekst.slice(0, 120), comment: "", img: null,
+          createdAt: new Date().toISOString()
+        });
+      });
+    }, 10);
+  });
+  document.addEventListener("scroll", verbergSelKnop, true);
+
+  /* ---- tracked changes op conceptberichten ------------------------
+     Een comment naast de tekst laat Luc uitleggen wat er anders moet; vaak is het
+     sneller om het gewoon anders op te schrijven. Daarom is elke .la-draft-txt te
+     bewerken, en wordt het verschil met de oorspronkelijke tekst zelf de annotatie:
+     voor, na, en de losse wijzigingen. Zo hoeft er niets vertaald te worden van
+     bedoeling naar tekst. */
+
+  function laTokens(s) { return s.match(/\s+|\S+/g) || []; }
+
+  /* Woord-diff via LCS. Woordniveau, niet teken- of regelniveau: bij lopende tekst
+     leest dat als tracked changes in plaats van als ruis. */
+  function laDiff(oud, nieuw) {
+    var a = laTokens(oud), b = laTokens(nieuw), n = a.length, m = b.length;
+    var uit = [];
+    function duw(op, t) {
+      var l = uit[uit.length - 1];
+      if (l && l.op === op) { l.t += t; } else { uit.push({ op: op, t: t }); }
+    }
+    /* Bij extreem lange teksten is de matrix niet de moeite; dan is "alles vervangen"
+       een eerlijker antwoord dan een bevroren tabblad. */
+    if (n * m > 400000) {
+      if (oud) duw("-", oud);
+      if (nieuw) duw("+", nieuw);
+      return uit;
+    }
+    var d = [], i, j;
+    for (i = 0; i <= n; i++) { d.push(new Uint32Array(m + 1)); }
+    for (i = n - 1; i >= 0; i--) {
+      for (j = m - 1; j >= 0; j--) {
+        d[i][j] = a[i] === b[j] ? d[i + 1][j + 1] + 1 : Math.max(d[i + 1][j], d[i][j + 1]);
+      }
+    }
+    i = 0; j = 0;
+    while (i < n && j < m) {
+      if (a[i] === b[j]) { duw("=", a[i]); i++; j++; }
+      else if (d[i + 1][j] >= d[i][j + 1]) { duw("-", a[i]); i++; }
+      else { duw("+", b[j]); j++; }
+    }
+    while (i < n) { duw("-", a[i++]); }
+    while (j < m) { duw("+", b[j++]); }
+    return uit;
+  }
+
+  /* Van een platte lijst wijzigingen naar hunks, zoals een unified diff dat doet.
+     Elke aaneengesloten wijziging wordt een eigen blok met de tekst eromheen als anker.
+     Waarom context en geen positie: een regel- of tekennummer klopt niet meer zodra er
+     iets bóven de wijziging verandert, terwijl de omringende woorden een blok ook in een
+     gewijzigd document nog terugvindbaar maken. Dat is precies waarom `patch` een hunk
+     met een verschoven nummer alsnog plaatst.
+
+     Het alineanummer is er om naar te kúnnen verwijzen ("alinea 3"), niet om op te
+     zoeken. Verwar de twee niet: het anker is de tekst. */
+  function laStaart(t, n) {
+    if (t.length <= n) return t;
+    var deel = t.slice(t.length - n);
+    var sp = deel.search(/\S/);
+    var w = deel.indexOf(" ");
+    return w > 0 && w < 12 ? deel.slice(w + 1) : deel.slice(sp < 0 ? 0 : sp);
+  }
+  function laKop(t, n) {
+    if (t.length <= n) return t;
+    var deel = t.slice(0, n);
+    var w = deel.lastIndexOf(" ");
+    return w > n - 12 && w > 0 ? deel.slice(0, w) : deel;
+  }
+  function laAlinea(tekst, pos) {
+    var voor = tekst.slice(0, Math.max(0, pos));
+    return (voor.split(/\n\s*\n/).length);
+  }
+
+  function laHunks(ops, nieuweTekst) {
+    var lijst = [], posNieuw = 0;
+    ops.forEach(function (o) {
+      lijst.push({ op: o.op, t: o.t, nieuw: posNieuw });
+      if (o.op !== "-") posNieuw += o.t.length;
+    });
+    var hunks = [], i = 0, n = 0;
+    while (i < lijst.length) {
+      if (lijst[i].op === "=") { i++; continue; }
+      var start = i, verwijderd = "", toegevoegd = "";
+      while (i < lijst.length && lijst[i].op !== "=") {
+        if (lijst[i].op === "-") { verwijderd += lijst[i].t; }
+        else { toegevoegd += lijst[i].t; }
+        i++;
+      }
+      n += 1;
+      hunks.push({
+        n: n,
+        alinea: laAlinea(nieuweTekst, lijst[start].nieuw),
+        voor: start > 0 ? laStaart(lijst[start - 1].t, 40) : "",
+        na: i < lijst.length ? laKop(lijst[i].t, 40) : "",
+        verwijderd: verwijderd,
+        toegevoegd: toegevoegd
+      });
+    }
+    return hunks;
+  }
+
+  function laTeken(box, ops) {
+    box.textContent = "";
+    var n = 0, vorigeWasWijziging = false;
+    ops.forEach(function (o) {
+      if (o.op === "=") {
+        box.appendChild(document.createTextNode(o.t));
+        vorigeWasWijziging = false;
+        return;
+      }
+      if (!vorigeWasWijziging) {
+        /* nummer vóór elk blok, zodat "hunk 2" in de chat hetzelfde blok aanwijst
+           als het nummer op het scherm */
+        n += 1;
+        var sup = document.createElement("sup");
+        sup.className = "la-hunk-nr";
+        sup.textContent = n;
+        box.appendChild(sup);
+        vorigeWasWijziging = true;
+      }
+      var e = document.createElement(o.op === "+" ? "ins" : "del");
+      e.textContent = o.t;
+      box.appendChild(e);
+    });
+  }
+
+  /* Naam van het concept, om een bewerking na een reload bij de goede kaart terug te
+     vinden. De kop van de kaart is stabieler dan een index: kaarten worden verplaatst. */
+  function laVeld(box, index) {
+    var kaart = box.closest ? box.closest(".la-draft") : null;
+    var kop = kaart && kaart.querySelector(".la-draft-hdr");
+    var t = (kop && kop.textContent || "").replace(/\s+/g, " ").trim();
+    return t ? t.slice(0, 160) : "concept-" + (index + 1);
+  }
+
+  /* Positie van een klik, uitgedrukt in tekens van de kale tekst: alles in een <del>
+     telt niet mee, want dat staat er straks niet meer. */
+  function laKlikOffset(box, x, y) {
+    var r = null;
+    if (document.caretRangeFromPoint) { r = document.caretRangeFromPoint(x, y); }
+    else if (document.caretPositionFromPoint) {
+      var cp = document.caretPositionFromPoint(x, y);
+      if (cp) { r = document.createRange(); r.setStart(cp.offsetNode, cp.offset); }
+    }
+    if (!r || !box.contains(r.startContainer)) return null;
+    var doel = r.startContainer, offset = r.startOffset, telling = 0, klaar = false;
+    (function loop(node) {
+      if (klaar) return;
+      if (node.nodeType === 3) {
+        if (node === doel) { telling += offset; klaar = true; return; }
+        telling += node.nodeValue.length;
+        return;
+      }
+      if (node.nodeName === "SUP" && node.className === "la-hunk-nr") {
+        /* Het blokummer is opmaak, geen tekst: het staat niet in de echte tekst en mag
+           dus niet meetellen, anders staat de cursor per voorafgaand blok één teken
+           naast. Klikken óp het nummer telt als de rand van dat blok. */
+        if (node.contains(doel)) { klaar = true; }
+        return;
+      }
+      if (node.nodeName === "DEL") {
+        /* geklikt ín een doorhaling: die tekst verdwijnt, dus de rand ervan is het
+           dichtstbijzijnde punt dat straks nog bestaat */
+        if (node.contains(doel)) { klaar = true; }
+        return;
+      }
+      for (var i = 0; i < node.childNodes.length && !klaar; i++) { loop(node.childNodes[i]); }
+    })(box);
+    return Math.min(telling, box.__nieuw.length);
+  }
+
+  function laZetCaret(box, offset) {
+    var t = box.firstChild;
+    if (!t || t.nodeType !== 3) return;
+    var r = document.createRange();
+    r.setStart(t, Math.max(0, Math.min(offset, t.nodeValue.length)));
+    r.collapse(true);
+    var sel = window.getSelection();
+    sel.removeAllRanges(); sel.addRange(r);
+  }
+
+  function laDraftInit() {
+    var boxen = document.querySelectorAll(".la-draft-txt");
+    Array.prototype.forEach.call(boxen, function (box, index) {
+      if (box.__laKlaar) return;
+      box.__laKlaar = true;
+      box.__origineel = box.textContent;
+      box.__nieuw = box.textContent;
+      box.__veld = laVeld(box, index);
+
+      /* Altijd bewerkbaar. Een knop om "de bewerkmodus aan te zetten" is een drempel
+         voor iets wat Luc gewoon wil kunnen doen: klikken waar hij wil en typen. */
+      box.setAttribute("contenteditable", "plaintext-only");
+      box.classList.add("la-bewerkbaar");
+
+      var bar = document.createElement("div");
+      bar.className = "la-draft-bar";
+      var bHerstel = document.createElement("button");
+      bHerstel.textContent = "↺ Herstel origineel";
+      bHerstel.style.display = "none";
+      var meld = document.createElement("span");
+      meld.className = "la-draft-meld";
+      meld.textContent = "klik in de tekst om te bewerken";
+      bar.appendChild(bHerstel); bar.appendChild(meld);
+      box.parentNode.insertBefore(bar, box.nextSibling);
+      box.__bar = { herstel: bHerstel, meld: meld };
+
+      /* De opgemaakte weergave (doorhaling + onderstreping) is alleen te zien als de
+         cursor er niet in staat. Zodra Luc erin klikt gaat hij terug naar kale tekst,
+         anders zou hij in zijn eigen doorhalingen zitten typen. */
+      function toonMarkup() {
+        if (box.__actief) return null;
+        var ops = laDiff(box.__origineel, box.__nieuw);
+        var gewijzigd = ops.some(function (o) { return o.op !== "="; });
+        if (gewijzigd) { laTeken(box, ops); box.__markup = true; }
+        else { box.textContent = box.__nieuw; box.__markup = false; }
+        bHerstel.style.display = gewijzigd ? "" : "none";
+        meld.textContent = gewijzigd
+          ? (box.__nr ? "opgeslagen als annotatie " + box.__nr : "wijziging nog niet opgeslagen")
+          : "klik in de tekst om te bewerken";
+        return ops;
+      }
+      box.__toonMarkup = toonMarkup;
+
+      function toonPlat() {
+        if (!box.__markup) return;
+        box.textContent = box.__nieuw;
+        box.__markup = false;
+      }
+
+      /* Klikken terwijl de opmaak zichtbaar is, is het lastige geval. De doorgehaalde
+         tekst verdwijnt bij het terugschakelen naar kale tekst, dus de regel loopt anders
+         en de cursor van de browser landt op de verkeerde plek. Daarom rekenen we de
+         klikpositie zelf om: waar zat die klik in de kale tekst, de doorhalingen niet
+         meegeteld — en dáár zetten we de cursor terug. */
+      box.addEventListener("mousedown", function (ev) {
+        if (!box.__markup) return;
+        var doel = laKlikOffset(box, ev.clientX, ev.clientY);
+        ev.preventDefault();
+        box.__actief = true;
+        toonPlat();
+        box.focus();
+        if (doel !== null) { laZetCaret(box, doel); }
+      });
+      box.addEventListener("focus", function () { box.__actief = true; toonPlat(); });
+
+      function bewaarNu() {
+        box.__nieuw = box.textContent;
+        var ops = laDiff(box.__origineel, box.__nieuw);
+        if (ops.some(function (o) { return o.op !== "="; })) { laBewaarBewerking(box, ops); }
+        else if (box.__annId) { laVerwijderBewerking(box); }
+        return ops;
+      }
+      box.__bewaarNu = bewaarNu;
+
+      /* Tijdens het typen alleen opslaan, niet opmaken: de cursor mag niet verspringen. */
+      var timer = null;
+      box.addEventListener("input", function () {
+        clearTimeout(timer);
+        meld.textContent = "aan het typen…";
+        timer = setTimeout(function () { bewaarNu(); meld.textContent =
+          box.__nr ? "opgeslagen als annotatie " + box.__nr : "opgeslagen"; }, 900);
+      });
+
+      box.addEventListener("blur", function () {
+        clearTimeout(timer);
+        box.__actief = false;
+        bewaarNu();
+        toonMarkup();
+      });
+
+      box.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape") { ev.preventDefault(); box.blur(); }
+      });
+
+      bHerstel.addEventListener("click", function () {
+        box.__nieuw = box.__origineel;
+        box.__markup = false;
+        box.textContent = box.__origineel;
+        laVerwijderBewerking(box);
+        bHerstel.style.display = "none";
+        meld.textContent = "origineel hersteld";
+      });
+    });
+  }
+
+  function laVerwijderBewerking(box) {
+    if (!box.__annId) return;
+    var a = anns.filter(function (x) { return x.id === box.__annId; })[0];
+    if (a) { verwijder(a); }
+    box.__annId = null; box.__nr = null;
+  }
+
+  function laBewaarBewerking(box, ops) {
+    var a = {
+      id: box.__annId || ("edit-" + Date.now() + "-" + Math.random().toString(16).slice(2, 6)),
+      type: "edit",
+      veld: box.__veld,
+      target: box.__veld,
+      origineel: box.__origineel,
+      nieuw: box.__nieuw,
+      diff: ops,
+      hunks: laHunks(ops, box.__nieuw),
+      comment: "Tekst herschreven in het concept",
+      rect: { x: 0, y: 0, w: 0, h: 0 }
+    };
+    var bestaand = box.__annId && anns.filter(function (x) { return x.id === box.__annId; })[0];
+    if (bestaand) {
+      Object.keys(a).forEach(function (k) { bestaand[k] = a[k]; });
+      a = bestaand;
+    } else {
+      teller += 1; a.nr = teller; a.createdAt = new Date().toISOString();
+      anns.push(a);
+    }
+    box.__annId = a.id;
+    return bewaarAnnotatie(a).then(function () {
+      box.__nr = a.nr;
+      box.__bar.meld.textContent = "opgeslagen als annotatie " + a.nr;
+      return a;
+    }).catch(function () {
+      box.__bar.meld.textContent = "niet opgeslagen — bridge onbereikbaar";
+    });
+  }
+
+  /* Een blok terugplaatsen in de huidige tekst, op zijn anker. Dezelfde drie pogingen
+     van streng naar soepel als pas-hunk-toe.py: volledige context, linkercontext, kaal —
+     en alleen als de treffer uniek is, want anders zou hij op de verkeerde plek landen. */
+  function laPlaatsHunk(tekst, h) {
+    var voor = h.voor || "", na = h.na || "";
+    var weg = h.verwijderd || "", erbij = h.toegevoegd || "";
+    var pogingen = [[voor + weg + na, voor + erbij + na], [voor + weg, voor + erbij]];
+    if (weg) { pogingen.push([weg, erbij]); }
+    for (var i = 0; i < pogingen.length; i++) {
+      var zoek = pogingen[i][0], vervang = pogingen[i][1];
+      if (!zoek) continue;
+      var eerste = tekst.indexOf(zoek);
+      if (eerste >= 0 && tekst.indexOf(zoek, eerste + 1) < 0) {
+        return tekst.slice(0, eerste) + vervang + tekst.slice(eerste + zoek.length);
+      }
+    }
+    return null;
+  }
+
+  /* Na een reload staan de bewerkingen op schijf maar toont de kaart weer de tekst zoals
+     hij nu is. Openstaande blokken worden daar één voor één op teruggeplaatst — niet de
+     opgeslagen eindtekst in één keer. Dat verschil telt zodra een agent één blok heeft
+     doorgevoerd: de pagina is dan veranderd, en alleen wat nog openstaat hoort nog te
+     worden getoond. Blokken die al verwerkt zijn verdwijnen vanzelf. */
+  function laHerstelBewerkingen() {
+    var perVeld = {};
+    anns.forEach(function (a) { if (a.type === "edit" && a.veld) { perVeld[a.veld] = a; } });
+    Array.prototype.forEach.call(document.querySelectorAll(".la-draft-txt"), function (box) {
+      var a = perVeld[box.__veld];
+      if (!a || !box.__toonMarkup) return;
+      var hunks = (a.hunks || []).filter(function (h) { return !h.resolved; });
+
+      if (!hunks.length) {
+        /* Oudere bewerking zonder blokken: alleen terugzetten als de tekst nog exact
+           is zoals hij was, anders zou Lucs oude versie over de nieuwe heen komen. */
+        if (a.origineel && a.origineel !== box.__origineel) {
+          box.__bar.meld.textContent = "let op: de concepttekst is gewijzigd sinds annotatie " + a.nr;
+          return;
+        }
+        box.__annId = a.id; box.__nr = a.nr; box.__nieuw = a.nieuw || box.__origineel;
+        box.__toonMarkup();
+        return;
+      }
+
+      var tekst = box.__origineel, geplaatst = 0, kwijt = [];
+      hunks.forEach(function (h) {
+        var r = laPlaatsHunk(tekst, h);
+        if (r === null) { kwijt.push(h.n); } else { tekst = r; geplaatst += 1; }
+      });
+      if (!geplaatst) {
+        box.__bar.meld.textContent =
+          "annotatie " + a.nr + ": de tekst is te veel veranderd om de wijziging te tonen";
+        return;
+      }
+      box.__annId = a.id; box.__nr = a.nr; box.__nieuw = tekst;
+      box.__toonMarkup();
+      if (kwijt.length) {
+        box.__bar.meld.textContent = "annotatie " + a.nr + ": blok " + kwijt.join(", ") +
+          " niet meer terug te vinden in de tekst";
+      }
+    });
+  }
+
+  /* ---- test/debug-API -------------------------------------------- */
+  window.LucAnnotator = {
+    anns: function () { return anns; },
+    bridge: function () { return brug; },
+    session: verversSessie,
+    save: bewaarAnnotatie,
+    remove: verwijder,
+    resolve: markeerVerwerkt,
+    drafts: function () {
+      return Array.prototype.map.call(document.querySelectorAll(".la-draft-txt"), function (b) {
+        return { veld: b.__veld, origineel: b.__origineel, nieuw: b.__nieuw, nr: b.__nr || null };
+      });
+    },
+    diff: laDiff,
+    add: function (a) {
+      teller += 1;
+      a.nr = teller; a.type = a.type || (a.selectedText ? "text" : "region");
+      a.id = a.id || Date.now() + "-" + teller;
+      a.createdAt = a.createdAt || new Date().toISOString();
+      if (!a.rect) a.rect = { x: 0, y: 0, w: 0, h: 0 };
+      return bewaarAnnotatie(a);
+    }
+  };
+  /* ---- knoppen naar een nieuwe Claude-sessie ---------------------- */
+  /* Een ingebedde browser (zoals de preview-pane) geeft custom schemes als
+     claude:// niet door aan het OS: de klik doet dan stilzwijgend niets.
+     We proberen te navigeren en merken aan het uitblijven van een blur dat het
+     mislukt is; dan kopiëren we de link, zodat Luc hem kan plakken. */
+  function meldSessie(tekst, fout) {
+    var m = document.getElementById("la-sesmeld") || el("div");
+    m.id = "la-sesmeld";
+    m.className = fout ? "la-sesmeld la-fout" : "la-sesmeld";
+    m.textContent = tekst;
+    clearTimeout(m._t);
+    m._t = setTimeout(function () { if (m.parentNode) m.remove(); }, 7000);
+  }
+  function naarKlembord(url) {
+    var klaar = function () {
+      meldSessie("Deze weergave opent geen Claude-links. De link staat op je klembord, plak hem in Spotlight (cmd+spatie).", true);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(klaar, function () {
+        meldSessie("Kon de sessie niet openen. Start de bridge, of open deze pagina in je eigen browser.", true);
+      });
+      return;
+    }
+    var t = document.createElement("textarea");
+    t.value = url; t.style.cssText = "position:fixed;opacity:0";
+    document.body.appendChild(t); t.select();
+    try { document.execCommand("copy"); klaar(); } catch (e) {
+      meldSessie("Kon de sessie niet openen. Start de bridge, of open deze pagina in je eigen browser.", true);
+    }
+    t.remove();
+  }
+
+  document.addEventListener("click", function (ev) {
+    var a = ev.target.closest && ev.target.closest("a.la-sessie");
+    if (!a) return;
+    ev.preventDefault();
+    var url = a.getAttribute("href") || "";
+    /* Eerst de bridge: die draait buiten de browser en kan het scheme wel
+       openen. Lukt dat niet, dan pas navigeren en anders het klembord. */
+    post("/sessie", { url: url }).then(function () {
+      meldSessie("Nieuwe Claude-sessie geopend.");
+    }).catch(function () {
+      var vertrokken = false;
+      function weg() { vertrokken = true; }
+      window.addEventListener("blur", weg, { once: true });
+      document.addEventListener("visibilitychange", weg, { once: true });
+      try { window.location.href = url; } catch (e) { /* geblokkeerd */ }
+      setTimeout(function () {
+        window.removeEventListener("blur", weg);
+        if (!vertrokken) naarKlembord(url);
+      }, 700);
+    });
+  }, true);
+
+  render();
+  laDraftInit();
+  verversSessie().then(function () { laHerstelBewerkingen(); });
+  /* De bridge komt vaak later omhoog dan de pagina: de hook start hem pas ná de
+     schrijf-actie, en soms start iemand hem met de hand. Zonder deze poller blijft een
+     al openstaande pagina tot een reload op "bridge uit" staan, ook als de bridge
+     inmiddels antwoordt. Eén boolean-check per 3 seconden, alleen bij een zichtbare
+     pagina; zodra de bridge er is doet hij niets meer, en valt hij later weg dan pakt
+     dezelfde timer het weer op. */
+  setInterval(function () {
+    if (!brug.ok && !document.hidden) verversSessie();
+  }, 3000);
+  document.addEventListener("visibilitychange", function () {
+    if (!brug.ok && !document.hidden) verversSessie();
+  });
+  window.addEventListener("focus", function () {
+    if (!brug.ok) verversSessie();
+  });
+})();
+</script>
+<!-- /LUC-ANNOTATOR -->
+</body>
+</html>

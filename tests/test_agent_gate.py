@@ -133,7 +133,7 @@ class GateTests(unittest.TestCase):
             require_place(self.td)
 
     def test_bring_workspace_refuses_ungated_bind_and_symlink(self):
-        script = ROOT / "bring-workspace.sh"
+        script = ROOT / "scripts" / "policy" / "bring-workspace.sh"
         bind = subprocess.run(
             [str(script), "bind", r"C:\Users\x\src", "/home/dev/work/x"],
             cwd=ROOT,
@@ -253,7 +253,7 @@ class GateTests(unittest.TestCase):
             verify_manifest(manifest)
 
     def test_direct_powershell_adapter_has_no_source_bypass(self):
-        script = (ROOT / "place-policy.ps1").read_text()
+        script = (ROOT / "scripts" / "windows" / "place-policy.ps1").read_text()
         self.assertIn("[string]$Manifest", script)
         self.assertNotIn("[string]$Source", script)
         self.assertIn("placement_gate.py", script)

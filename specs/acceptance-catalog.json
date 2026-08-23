@@ -20,23 +20,23 @@
     {"id":"AC-12","description":"Eigen sandbox.enabled=false zet sandbox niet uit","kind":"automatic","evidence":"AC-12.txt"},
     {"id":"AC-12r","description":"Nulmeting: sandbox.enabled=false werkt zonder managed laag","kind":"automatic","evidence":"AC-12r.txt"},
     {"id":"AC-13","description":"Eigen Read-allow verliest van managed deny","kind":"automatic","evidence":"AC-13.txt","dependsOn":["AC-09b"]},
-    {"id":"AC-14","description":"Zonder bwrap start Claude Code niet","kind":"manual","evidence":"VERIFICATIE.md","matrix":true},
-    {"id":"AC-15","description":"Alleen Windows-bestand maakt policy actief in WSL","kind":"manual","evidence":"VERIFICATIE.md","matrix":true},
-    {"id":"AC-16","description":"Zonder wslInheritsWindowsSettings verdwijnt het effect","kind":"manual","evidence":"VERIFICATIE.md","dependsOn":["AC-15"],"matrix":true},
+    {"id":"AC-14","description":"Zonder bwrap start Claude Code niet","kind":"manual","evidence":"docs/VERIFICATION.md","matrix":true},
+    {"id":"AC-15","description":"Alleen Windows-bestand maakt policy actief in WSL","kind":"manual","evidence":"docs/VERIFICATION.md","matrix":true},
+    {"id":"AC-16","description":"Zonder wslInheritsWindowsSettings verdwijnt het effect","kind":"manual","evidence":"docs/VERIFICATION.md","dependsOn":["AC-15"],"matrix":true},
     {"id":"AC-17","description":"Bash: blacklistbestand in toegestane map is dicht","kind":"automatic","evidence":"AC-17.txt"},
     {"id":"AC-18","description":"Read: blacklistbestand in toegestane map is dicht","kind":"automatic","evidence":"AC-18.txt","dependsOn":["AC-09b"],"matrix":true},
     {"id":"AC-19","description":"Bash: beschermde submap in toegestane map is dicht","kind":"automatic","evidence":"AC-19.txt"},
     {"id":"AC-20","description":"Gewoon bestand naast blacklist is leesbaar","kind":"automatic","evidence":"AC-20.txt"},
-    {"id":"AC-21","description":"Alleen managed MCP-servers zijn bruikbaar","kind":"manual","evidence":"VERIFICATIE.md","matrix":true},
+    {"id":"AC-21","description":"Alleen managed MCP-servers zijn bruikbaar","kind":"manual","evidence":"docs/VERIFICATION.md","matrix":true},
     {"id":"AC-22","description":"Bash-pad buiten toolregels is dicht door denyRead","kind":"automatic","evidence":"AC-22.txt"},
-    {"id":"AC-23","description":"Read buiten permissions.deny vraagt interactief goedkeuring","kind":"manual","evidence":"VERIFICATIE.md","matrix":true},
+    {"id":"AC-23","description":"Read buiten permissions.deny vraagt interactief goedkeuring","kind":"manual","evidence":"docs/VERIFICATION.md","matrix":true},
     {"id":"AC-24p","description":"cmd.exe is buiten de sandbox aanroepbaar","kind":"condition","evidence":"AC-24p.txt"},
     {"id":"AC-24","description":"cmd.exe leest de Windows-canary niet vanuit de sandbox","kind":"automatic","evidence":"AC-24.txt","dependsOn":["AC-24p"],"matrix":true}
   ],
   "releaseGates": [
-    {"id":"second-developer-laptop","description":"Tweede developer-laptop (niet deze machine) heeft dezelfde matrix groen, inclusief AC-16 en VERIFICATIE.md."},
+    {"id":"second-developer-laptop","description":"Tweede developer-laptop (niet deze machine) heeft dezelfde matrix groen, inclusief AC-16 en docs/VERIFICATION.md."},
     {"id":"OQ-1","description":"OQ-1: echte klantdatapaden staan in _beschermd, niet alleen fixtures."},
     {"id":"rollback-checked","description":"Policy is teruggedraaid of bewust blijven staan; rollbackmarker gecontroleerd."},
-    {"id":"fixtures-cleaned","description":"Fixtures opgeruimd (VERIFICATIE.md § Opruimen)."}
+    {"id":"fixtures-cleaned","description":"Fixtures opgeruimd (docs/VERIFICATION.md § Opruimen)."}
   ]
 }

@@ -36,8 +36,8 @@ De policygenerator draait met het intakebestand en een lokaal uitvoerpad.
 - `pkgs.example.test` staat in `sandbox.network.allowedDomains`.
 - `failIfUnavailable`, `allowUnsandboxedCommands`, `allowManagedReadPathsOnly`,
   `allowManagedDomainsOnly` en `wslInheritsWindowsSettings` behouden hun veilige waarden.
-- De gegenereerde payload slaagt voor `check-configs.sh`.
-- Genereren, `check-configs.sh` en de plaatsingspoort gebruiken één gedeelde definitie
+- De gegenereerde payload slaagt voor `bin/sandbox policy validate`.
+- Genereren, `bin/sandbox policy validate` en de plaatsingspoort gebruiken één gedeelde definitie
   voor padnormalisatie, locks, beschermde-paddekking en intake-workspace-dekking.
 - De plaatsingspoort weigert een na generatie verzwakte of onvolledige payload.
 - Een tweede generatie naar hetzelfde pad faalt zonder `--force`.
@@ -83,8 +83,8 @@ De generator draait.
 
 ### When
 
-`./install-prereqs.sh`, `./generate-policy.sh`, `./place-policy.sh`, `./bring-workspace.sh bind`
-zonder `--i-approved-bind`, of `./run.sh` (groen) draait.
+`./bin/sandbox install`, `./bin/sandbox policy generate`, `./bin/sandbox policy place`, `./bin/sandbox workspace bind`
+zonder `--i-approved-bind`, of `./bin/sandbox test` (groen) draait.
 
 ### Then
 
@@ -93,14 +93,14 @@ zonder `--i-approved-bind`, of `./run.sh` (groen) draait.
 - De fout noemt het ontbrekende bestand of de ontbrekende bevestiging.
 
 De generate-poort valideert precies het intakepad dat als eerste argument aan
-`generate-policy.sh` is gegeven; een ander geldig `local/policy-input.json` mag een
+`bin/sandbox policy generate` is gegeven; een ander geldig `local/policy-input.json` mag een
 ongeldige gekozen intake niet maskeren.
 
 Voor plaatsing maakt `tools/placement_gate.py` pas na alle controles
 `local/placement-manifest.json`. Dat manifest bindt consent, intake, beginstaat,
 snapshot, rollback-roundtrip, rode nulmeting, referentietemplate en de exacte payload
-met SHA-256 aan elkaar. Zowel `place-policy.sh` als direct gebruik van
-`place-policy.ps1 -Manifest ...` verifieert dit manifest opnieuw. De PowerShell-adapter
+met SHA-256 aan elkaar. Zowel `bin/sandbox policy place` als direct gebruik van
+`scripts/windows/place-policy.ps1 -Manifest ...` verifieert dit manifest opnieuw. De PowerShell-adapter
 accepteert geen losse payloadbron.
 
 De laptopproef bewaart daarnaast bewezen faseovergangen in het append-only,

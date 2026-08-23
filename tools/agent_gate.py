@@ -138,7 +138,7 @@ def require_generated(root: Path, intake: dict) -> Path:
     pad = generated_path(root)
     if not pad.is_file():
         raise GateError(
-            f"{pad} ontbreekt. Genereer eerst: ./generate-policy.sh local/policy-input.json"
+            f"{pad} ontbreekt. Genereer eerst: ./bin/sandbox policy generate local/policy-input.json"
         )
     if pad.name == TEMPLATE_NAME or pad.resolve() == (root / "config" / TEMPLATE_NAME).resolve():
         raise GateError("de statische template mag niet als payload dienen")
@@ -167,7 +167,7 @@ def latest_red_ok(root: Path) -> Path:
             return sam
     raise GateError(
         "geen geslaagde rode nulmeting gevonden in evidence/*-red/. "
-        "Draai eerst ./run.sh --red vóór je een policy plaatst."
+        "Draai eerst ./bin/sandbox test --red vóór je een policy plaatst."
     )
 
 
@@ -175,13 +175,13 @@ def require_voorbereiding(root: Path) -> None:
     staat = root / "local" / "beginstaat"
     if not ((staat / "dpkg.txt").is_file() or (staat / "omgeving.txt").is_file()):
         raise GateError(
-            "local/beginstaat ontbreekt. Draai eerst ./inventaris.sh — "
+            "local/beginstaat ontbreekt. Draai eerst ./bin/sandbox baseline — "
             "zonder beginstaat is teardown archeologie."
         )
     if not (root / "local" / "snapshot.json").is_file():
         raise GateError(
             "local/snapshot.json ontbreekt. Geen WSL-snapshot betekent geen proef. "
-            "Draai snapshot.ps1 en kopieer de json hierheen."
+            "Draai scripts/windows/create-snapshot.ps1 en kopieer de json hierheen."
         )
 
 
@@ -191,7 +191,7 @@ def require_place(root: Path) -> dict:
     if not (root / "local" / "rollback-roundtrip.ok").is_file():
         raise GateError(
             "local/rollback-roundtrip.ok ontbreekt. Test de rollback eerst "
-            "met rollback-roundtrip.ps1 in een admin-PowerShell."
+            "met scripts/windows/test-rollback-roundtrip.ps1 in een admin-PowerShell."
         )
     intake = require_intake(root)
     require_generated(root, intake)

@@ -29,13 +29,23 @@ class ProofLedgerTests(unittest.TestCase):
             next(item for item in catalog["acceptanceCriteria"] if item["id"] == "AC-04")["dependsOn"],
             ["AC-09b"],
         )
-        run_ids = set(re.findall(r"^(?:check|skip|handmatig) (AC-[0-9]+[a-z]?)\b", (ROOT / "run.sh").read_text(), re.MULTILINE))
+        run_ids = set(re.findall(
+            r"^(?:check|skip|handmatig) (AC-[0-9]+[a-z]?)\b",
+            (ROOT / "scripts" / "trial" / "run-tests.sh").read_text(),
+            re.MULTILINE,
+        ))
         self.assertTrue(run_ids)
         self.assertEqual(run_ids - ids, set())
 
     def test_remote_measurement_package_includes_ledger_dependencies(self):
-        script = (ROOT / "testomgeving" / "ronde2-meting.sh").read_text()
+        script = (ROOT / "test-lab" / "round-2-measurement.sh").read_text()
         for required in (
+            "bin/sandbox",
+            "scripts/lib/repo-root.sh",
+            "scripts/lib/evaluate-result.sh",
+            "scripts/policy/check-configs.sh",
+            "scripts/trial/setup-fixtures.sh",
+            "scripts/trial/run-tests.sh",
             "tools/agent_gate.py",
             "tools/policy_artifact.py",
             "tools/proof_ledger.py",

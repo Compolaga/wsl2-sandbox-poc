@@ -62,7 +62,7 @@ def parse_summary(path: Path) -> dict[str, Any]:
 def parse_results(path: Path) -> list[dict[str, str]]:
     if not path.is_file():
         return []
-    # run.sh schrijft statusovergangen append-only (bezig -> pass/fail en soms later
+    # bin/sandbox test schrijft statusovergangen append-only (bezig -> pass/fail en soms later
     # pass -> ongeldig door een afhankelijke poort). Net als status_van in Bash wint de
     # laatste status, maar de oorspronkelijke volgorde van ids blijft behouden.
     by_id: dict[str, dict[str, str]] = {}

@@ -134,14 +134,14 @@ class TrialLifecycleTests(unittest.TestCase):
 
     def test_platform_adapters_use_the_lifecycle_interface(self):
         expected = {
-            "install-prereqs.sh": ("plan install", "record install-started", "record install-completed"),
-            "place-policy.ps1": ("plan place", "record placement-started", "record policy-placed"),
-            "rollback-policy.ps1": ("plan rollback", "record rollback-started", "record policy-removed"),
-            "teardown.sh": ("lifecycle_cleanup_gate",),
-            "run.sh": ("plan verify",),
-            "inventaris.sh": ("record beginstate-recorded",),
-            "snapshot.ps1": ("record snapshot-recorded",),
-            "rollback-roundtrip.ps1": ("record rollback-route-tested",),
+            "scripts/trial/install-prerequisites.sh": ("plan install", "record install-started", "record install-completed"),
+            "scripts/windows/place-policy.ps1": ("plan place", "record placement-started", "record policy-placed"),
+            "scripts/windows/rollback-policy.ps1": ("plan rollback", "record rollback-started", "record policy-removed"),
+            "scripts/trial/teardown.sh": ("lifecycle_cleanup_gate",),
+            "scripts/trial/run-tests.sh": ("plan verify",),
+            "scripts/trial/capture-baseline.sh": ("record beginstate-recorded",),
+            "scripts/windows/create-snapshot.ps1": ("record snapshot-recorded",),
+            "scripts/windows/test-rollback-roundtrip.ps1": ("record rollback-route-tested",),
         }
         for name, fragments in expected.items():
             text = (ROOT / name).read_text()
@@ -155,7 +155,7 @@ class TrialLifecycleTests(unittest.TestCase):
         return subprocess.run(
             [
                 "bash", "-c", command, "test-shell",
-                str(ROOT / "tools" / "teardown_lifecycle.sh"),
+                str(ROOT / "scripts" / "lib" / "teardown-lifecycle.sh"),
                 str(self.td),
                 str(ROOT / "tools" / "trial_lifecycle.py"),
             ],

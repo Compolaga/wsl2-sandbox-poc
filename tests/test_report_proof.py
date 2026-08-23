@@ -30,7 +30,7 @@ class ReportProofTests(unittest.TestCase):
             self.assertTrue((ev / "proof-matrix.md").is_file())
             inhoud = (ev / "proof-matrix.md").read_text()
             self.assertIn("Tweede developer-laptop", inhoud)
-            self.assertIn("VERIFICATIE.md", inhoud)
+            self.assertIn("docs/VERIFICATION.md", inhoud)
             self.assertIn("niet gedraaid", inhoud)
 
     def test_prefers_structured_manifest_but_keeps_legacy_summary_compatible(self):

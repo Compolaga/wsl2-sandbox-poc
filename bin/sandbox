@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+# Enige publieke commandoregelinterface voor de sandboxproef.
+# De implementaties blijven interne adapters; exec bewaart hun argumenten,
+# uitvoer en exitcode letterlijk.
+set -uo pipefail
+
+BIN_DIR="$(CDPATH= cd -- "$(dirname "$0")" && pwd -P)" || exit 2
+# shellcheck source=../scripts/lib/repo-root.sh
+source "$BIN_DIR/../scripts/lib/repo-root.sh"
+REPO_ROOT="$(sandbox_repo_root "$BIN_DIR")" || exit $?
+
+usage() {
+  cat <<'EOF'
+Gebruik: bin/sandbox <commando> [opties]
+
+Commando's:
+  baseline                         leg de beginstaat vast
+  install [opties]                 installeer goedgekeurde vereisten
+  workspace [copy|bind] ...        haal een workspace naar WSL2
+
+  policy generate ...              genereer een policy
+  policy validate [bestand]        valideer policy-artefacten
+  policy place                     plaats de gegenereerde policy
+  policy rollback [opties]         draai de Windows-policy terug
+
+  fixtures setup                   zet de testfixtures neer
+  fixtures clean                   verwijder uitsluitend testfixtures
+  test [--red|AC-ID]               draai de acceptatietests
+  self-test [harness|config|all]    toets het testharnas
+  proof [evidence-map]              toon de bewijsmatrix
+  status                           toon de lifecycle-status
+  lifecycle verify|plan|record ... beheer het lifecycle-journal
+  teardown                         voer de veilige teardown uit
+  unlock [--force]                 verwijder lokale managed settings
+
+  snapshot create [opties]         maak een WSL2-snapshot
+  snapshot restore [opties]        herstel een WSL2-snapshot
+  rollback test [opties]           toets de rollback-roundtrip
+
+  help                             toon deze hulp
+EOF
+}
+
+fail_usage() {
+  echo "FOUT: onbekend of onvolledig commando: $*" >&2
+  usage >&2
+  exit 2
+}
+
+run_script() {
+  local script="$1"
+  shift
+  [ -x "$REPO_ROOT/$script" ] || {
+    echo "FOUT: interne adapter ontbreekt of is niet uitvoerbaar: $script" >&2
+    exit 2
+  }
+  exec "$REPO_ROOT/$script" "$@"
+}
+
+run_python() {
+  command -v python3 >/dev/null || {
+    echo "FOUT: python3 ontbreekt." >&2
+    exit 2
+  }
+  exec python3 "$@"
+}
+
+run_powershell() {
+  local script="$1"
+  shift
+  local path="$REPO_ROOT/$script"
+  [ -f "$path" ] || {
+    echo "FOUT: interne Windows-adapter ontbreekt: $script" >&2
+    exit 2
+  }
+
+  if command -v powershell.exe >/dev/null 2>&1; then
+    if command -v wslpath >/dev/null 2>&1; then
+      path="$(wslpath -w "$path")" || exit 2
+    fi
+    exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$path" "$@"
+  fi
+  if command -v pwsh >/dev/null 2>&1; then
+    exec pwsh -NoProfile -File "$path" "$@"
+  fi
+
+  echo "FOUT: dit commando vereist Windows PowerShell of PowerShell 7." >&2
+  exit 2
+}
+
+COMMAND="${1:-help}"
+[ "$#" -eq 0 ] || shift
+
+case "$COMMAND" in
+  help|-h|--help)
+    usage
+    ;;
+  baseline)
+    run_script scripts/trial/capture-baseline.sh "$@"
+    ;;
+  install)
+    run_script scripts/trial/install-prerequisites.sh "$@"
+    ;;
+  workspace)
+    run_script scripts/policy/bring-workspace.sh "$@"
+    ;;
+  policy)
+    SUBCOMMAND="${1:-}"
+    [ "$#" -eq 0 ] || shift
+    case "$SUBCOMMAND" in
+      generate) run_script scripts/policy/generate-policy.sh "$@" ;;
+      validate) run_script scripts/policy/check-configs.sh "$@" ;;
+      place)    run_script scripts/policy/place-policy.sh "$@" ;;
+      rollback) run_powershell scripts/windows/rollback-policy.ps1 "$@" ;;
+      *) fail_usage "policy ${SUBCOMMAND}" ;;
+    esac
+    ;;
+  fixtures)
+    SUBCOMMAND="${1:-}"
+    [ "$#" -eq 0 ] || shift
+    case "$SUBCOMMAND" in
+      setup) run_script scripts/trial/setup-fixtures.sh "$@" ;;
+      clean) run_script scripts/trial/setup-fixtures.sh --clean "$@" ;;
+      *) fail_usage "fixtures ${SUBCOMMAND}" ;;
+    esac
+    ;;
+  test)
+    run_script scripts/trial/run-tests.sh "$@"
+    ;;
+  self-test)
+    SUBCOMMAND="${1:-harness}"
+    case "$SUBCOMMAND" in
+      harness)
+        [ "$#" -eq 0 ] || shift
+        run_script scripts/trial/self-test.sh "$@"
+        ;;
+      config)
+        shift
+        run_script scripts/policy/check-configs.sh --selftest "$@"
+        ;;
+      all)
+        shift
+        "$REPO_ROOT/scripts/trial/self-test.sh" "$@" || exit $?
+        run_script scripts/policy/check-configs.sh --selftest
+        ;;
+      *)
+        # Bestaande selftest-opties, zoals -n en -v, blijven direct bruikbaar.
+        run_script scripts/trial/self-test.sh "$@"
+        ;;
+    esac
+    ;;
+  proof)
+    run_script scripts/policy/report-proof.sh "$@"
+    ;;
+  status)
+    run_python "$REPO_ROOT/tools/trial_lifecycle.py" status --root "$REPO_ROOT" "$@"
+    ;;
+  lifecycle)
+    SUBCOMMAND="${1:-}"
+    [ "$#" -eq 0 ] || shift
+    case "$SUBCOMMAND" in
+      verify|plan|record)
+        run_python "$REPO_ROOT/tools/trial_lifecycle.py" "$SUBCOMMAND" "$@" --root "$REPO_ROOT"
+        ;;
+      *) fail_usage "lifecycle ${SUBCOMMAND}" ;;
+    esac
+    ;;
+  teardown)
+    run_script scripts/trial/teardown.sh "$@"
+    ;;
+  unlock)
+    run_script scripts/trial/unlock.sh "$@"
+    ;;
+  snapshot)
+    SUBCOMMAND="${1:-}"
+    [ "$#" -eq 0 ] || shift
+    case "$SUBCOMMAND" in
+      create)  run_powershell scripts/windows/create-snapshot.ps1 "$@" ;;
+      restore) run_powershell scripts/windows/restore-snapshot.ps1 "$@" ;;
+      *) fail_usage "snapshot ${SUBCOMMAND}" ;;
+    esac
+    ;;
+  rollback)
+    SUBCOMMAND="${1:-}"
+    [ "$#" -eq 0 ] || shift
+    case "$SUBCOMMAND" in
+      test) run_powershell scripts/windows/test-rollback-roundtrip.ps1 "$@" ;;
+      *) fail_usage "rollback ${SUBCOMMAND}" ;;
+    esac
+    ;;
+  *)
+    fail_usage "$COMMAND"
+    ;;
+esac

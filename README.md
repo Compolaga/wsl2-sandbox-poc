@@ -22,7 +22,7 @@ developer-laptop na Intune-uitrol.
   23-08-2026 op één Windows-laptop groen doorlopen.
 
 De aanvullende laptopuitvoer staat niet in deze publieke clone. De conclusie is vastgelegd
-in [decisions.md](decisions.md), maar moet door ITOps op de doelomgeving opnieuw worden
+in [decisions.md](docs/decisions.md), maar moet door ITOps op de doelomgeving opnieuw worden
 bewezen.
 
 **Nog nodig vóór teamuitrol:**
@@ -33,7 +33,7 @@ bewezen.
 - doorloop na Intune-uitrol de automatische én handmatige route op een tweede
   developer-laptop.
 
-De actuele vragen en hun gevolgen staan in [open-questions.md](open-questions.md).
+De actuele vragen en hun gevolgen staan in [open-questions.md](docs/open-questions.md).
 
 ## Hoe de bescherming werkt
 
@@ -49,7 +49,7 @@ administratief detail.
 
 ## Aan de slag
 
-**Begin bij de [Agentpoort in HANDOFF.md](HANDOFF.md#agentpoort--eerst-vragen-dan-pas-doen).**
+**Begin bij de [Agentpoort in HANDOFF.md](docs/HANDOFF.md#agentpoort--eerst-vragen-dan-pas-doen).**
 Die route vraagt vóór installaties, workspacekeuzes en policyplaatsing om expliciete
 toestemming en genereert daarna de laptop-specifieke Windows-payload.
 
@@ -58,25 +58,27 @@ Gebruik voor een proef een VM of aparte testlaptop. Regel eerst een Windows-admi
 `~/repos` is alleen het fixturepad en nooit een organisatiekeuze.
 
 De volledige uitvoerroute, voorwaarden, drie fasen, commando's en teardown staan in
-[HANDOFF.md](HANDOFF.md). Voer de statische Windows-template niet rechtstreeks uit.
+[HANDOFF.md](docs/HANDOFF.md). Voer de statische Windows-template niet rechtstreeks uit.
+Alle ondersteunde repositorycommando's lopen via `bin/sandbox`; bekijk de compacte
+commandolijst met `./bin/sandbox help`.
 
 ## Verificatie en vrijgave
 
 **Volledige verificatie is de automatische suite plus de interactieve controles plus een
-herhaling door ITOps op een tweede laptop.** [VERIFICATIE.md](VERIFICATIE.md) bevat de
+herhaling door ITOps op een tweede laptop.** [VERIFICATION.md](docs/VERIFICATION.md) bevat de
 verwachte uitkomsten, handmatige systeemcontroles, alle acceptatiecriteria en de
 vrijgavepoort.
 
 De automatische suite is fail-closed diagnostiek: een probe die niet aantoonbaar is
-uitgevoerd wordt ongeldig, niet groen. Daardoor kan `run.sh` de interactieve route niet
+uitgevoerd wordt ongeldig, niet groen. Daardoor kan `bin/sandbox test` de interactieve route niet
 vervangen.
 
 ## Documentatie
 
-- [HANDOFF.md](HANDOFF.md) — veilig installeren, configureren, uitrollen en terugdraaien.
-- [VERIFICATIE.md](VERIFICATIE.md) — automatisch en handmatig verifiëren en vrijgeven.
-- [decisions.md](decisions.md) — gedateerde besluiten, bronnen en meetconclusies.
-- [open-questions.md](open-questions.md) — open of uitgestelde keuzes met eigenaar en gevolg.
+- [HANDOFF.md](docs/HANDOFF.md) — veilig installeren, configureren, uitrollen en terugdraaien.
+- [VERIFICATION.md](docs/VERIFICATION.md) — automatisch en handmatig verifiëren en vrijgeven.
+- [decisions.md](docs/decisions.md) — gedateerde besluiten, bronnen en meetconclusies.
+- [open-questions.md](docs/open-questions.md) — open of uitgestelde keuzes met eigenaar en gevolg.
 - [evidence/README.md](evidence/README.md) — bewijsformaat, herhaalbaarheid en beperkingen.
 - [templates/proof-matrix.md](templates/proof-matrix.md) — aftekenlijst per laptop.
 

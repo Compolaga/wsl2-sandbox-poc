@@ -104,7 +104,7 @@ class GeneratorTests(unittest.TestCase):
             doel = Path(td) / "payload.json"
             write_atomic(doel, out, False)
             rc = subprocess.run(
-                [str(ROOT / "check-configs.sh"), str(doel)],
+                [str(ROOT / "scripts" / "policy" / "check-configs.sh"), str(doel)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,

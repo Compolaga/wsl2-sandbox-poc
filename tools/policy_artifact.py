@@ -69,7 +69,7 @@ def assert_workspace(path: str, allow_mnt: bool) -> None:
     if (path == "/mnt" or path.startswith("/mnt/")) and not allow_mnt:
         raise PolicyError(
             f"{path} ligt onder /mnt; dat opent de Windows-schijf. Kies een Linux-pad "
-            "en haal de Windows-map daarheen met ./bring-workspace.sh, of zet "
+            "en haal de Windows-map daarheen met ./bin/sandbox workspace, of zet "
             "allowWindowsMounts alleen als je dat risico bewust accepteert."
         )
 

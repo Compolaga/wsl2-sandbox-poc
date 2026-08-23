@@ -9,7 +9,7 @@
     "~/repos/**/config-a.txt": "Read(~/repos/**/config-a.txt)",
     "~/repos/**/submap": "Read(~/repos/**/submap/**)"
   },
-  "_beschermd_uitleg": "DE ENIGE PLEK OM EEN BESCHERMD PAD TOE TE VOEGEN. Sleutel = het pad zoals de sandbox-laag het kent, waarde = de Read(...)-regel die dezelfde bescherming op de tool-laag geeft. check-configs.sh eist dat elke waarde in permissions.deny staat en dat de sleutel door denyRead gedekt is - letterlijk of via een bredere wortel. Voeg je hier een pad toe zonder het in beide lijsten te zetten, dan faalt de check.",
+  "_beschermd_uitleg": "DE ENIGE PLEK OM EEN BESCHERMD PAD TOE TE VOEGEN. Sleutel = het pad zoals de sandbox-laag het kent, waarde = de Read(...)-regel die dezelfde bescherming op de tool-laag geeft. bin/sandbox policy validate eist dat elke waarde in permissions.deny staat en dat de sleutel door denyRead gedekt is - letterlijk of via een bredere wortel. Voeg je hier een pad toe zonder het in beide lijsten te zetten, dan faalt de check.",
   "permissions": {
     "deny": [
       "Read(~/probe-a/**)",

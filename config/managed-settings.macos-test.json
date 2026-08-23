@@ -1,7 +1,7 @@
 {
-  "_comment": "SLICE 2 OP LUCS EIGEN MAC - bewust smal. Doel: bewijzen dat de managed-only lock-keys werken (AC-11 t/m AC-13) zonder de rest van zijn werk te blokkeren. Plaatsen als /Library/Application Support/ClaudeCode/managed-settings.json, met sudo. Weghalen met ./unlock.sh.",
+  "_comment": "SLICE 2 OP LUCS EIGEN MAC - bewust smal. Doel: bewijzen dat de managed-only lock-keys werken (AC-11 t/m AC-13) zonder de rest van zijn werk te blokkeren. Plaatsen als /Library/Application Support/ClaudeCode/managed-settings.json, met sudo. Weghalen met ./bin/sandbox unlock.",
   "_waarom_smal": "De volledige whitelist-inversie (denyRead op heel ~/) hoort NIET op deze machine. Die sluit Claude Code uit van ~/Desktop, ~/Documents en elk ander project, en met allowUnsandboxedCommands: false kun je dat niet omzeilen. Hier staan alleen de fixture-paden plus twee echte credential-mappen, zodat al het andere werk doorloopt.",
-  "_dekking": "De paden hieronder zijn precies wat AC-00p, AC-01 t/m AC-06, AC-17 t/m AC-20 en AC-22 nodig hebben. ~/.ssh en ~/.aws zijn echte mappen: Claude Code kan die tijdens deze test niet meer lezen. Dat is de bedoeling (AC-05 leunt erop) maar het raakt je gewone werk - haal ze weg als dat hindert, dan slaat run.sh AC-05 over in plaats van te falen.",
+  "_dekking": "De paden hieronder zijn precies wat AC-00p, AC-01 t/m AC-06, AC-17 t/m AC-20 en AC-22 nodig hebben. ~/.ssh en ~/.aws zijn echte mappen: Claude Code kan die tijdens deze test niet meer lezen. Dat is de bedoeling (AC-05 leunt erop) maar het raakt je gewone werk - haal ze weg als dat hindert, dan slaat bin/sandbox test AC-05 over in plaats van te falen.",
   "_beschermd": {
     "~/probe-a": "Read(~/probe-a/**)",
     "~/.ssh": "Read(~/.ssh/**)",

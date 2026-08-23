@@ -12,7 +12,7 @@ __pycache__/
 
 # Bevestigde laptop-intake en gegenereerde payloads horen niet in git.
 local/
-run.sh.origineel
+scripts/trial/run-tests.sh.origineel
 
 # Platform- en editormetadata.
 .DS_Store

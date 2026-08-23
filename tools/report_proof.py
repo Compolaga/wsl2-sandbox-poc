@@ -98,21 +98,21 @@ def build(root: Path, evidence: Path) -> str:
         "# Bewijsmatrix — automatisch uit deze run",
         "",
         "Claim nooit dat de sandbox houdt als een vrijgavepoort hieronder open is.",
-        "Eén groene `run.sh` is een proef op één machine, geen uitrolklaar bewijs.",
+        "Eén groene `bin/sandbox test` is een proef op één machine, geen uitrolklaar bewijs.",
         "",
         f"Evidence: `{evidence}`",
         f"Mode: {sam.get('mode') or 'onbekend'}   Exit: {sam.get('exit') or '?'}",
         "",
         "| AC / controle | Wat het bewijst | Uitkomst | Bewijs |",
         "|---|---|---|---|",
-        row("A1–A11", "Aannames van deze laptop", aannames, "HANDOFF.md"),
+        row("A1–A11", "Aannames van deze laptop", aannames, "docs/HANDOFF.md"),
         row("Installatie-toestemming", "Gebruiker heeft ja gezegd vóór apt/npm/WSL", consent_ok, "`local/consent.json`"),
         row("Workspace-intake", "Gekozen roots + blacklist bevestigd", intake_ok, "`local/policy-input.json`"),
-        row("Windows → WSL", "Windows-mappen gekopieerd, geen symlink naar `/mnt`", bring, "`bring-workspace.sh`"),
-        row("`check-configs.sh` payload", "Locks en `_beschermd` overleefden de merge", check_configs, str(generated.name)),
-        row("`selftest.sh`", "Het harnas kan falen", selftest, "*geen* sandbox-bewijs"),
-        row("`run.sh --red`", "Containmentproeven lekken zonder policy", red_ok, "samenvatting.txt"),
-        row("`run.sh` groen", "Canary komt niet terug; toegestane paden wel", green_ok, "samenvatting.txt"),
+        row("Windows → WSL", "Windows-mappen gekopieerd, geen symlink naar `/mnt`", bring, "`bin/sandbox workspace`"),
+        row("`bin/sandbox policy validate` payload", "Locks en `_beschermd` overleefden de merge", check_configs, str(generated.name)),
+        row("`bin/sandbox self-test`", "Het harnas kan falen", selftest, "*geen* sandbox-bewijs"),
+        row("`bin/sandbox test --red`", "Containmentproeven lekken zonder policy", red_ok, "samenvatting.txt"),
+        row("`bin/sandbox test` groen", "Canary komt niet terug; toegestane paden wel", green_ok, "samenvatting.txt"),
     ]
     for meta in (item for item in catalog["acceptanceCriteria"] if item.get("matrix")):
         ac, uitleg = meta["id"], meta["description"]
@@ -124,7 +124,7 @@ def build(root: Path, evidence: Path) -> str:
             "handmatig" if meta["kind"] == "manual" else meta["evidence"]
         )
         regels.append(row(ac, uitleg, uitkomst, bewijs))
-    regels.append(row("VERIFICATIE.md", "Twaalf interactieve controles in een gewone sessie", verificatie, "VERIFICATIE.md"))
+    regels.append(row("docs/VERIFICATION.md", "Twaalf interactieve controles in een gewone sessie", verificatie, "docs/VERIFICATION.md"))
     regels += ["", "## Nog niet vrijgegeven — dit blijft open", ""]
     gates = manifest.get("releaseGates", []) if manifest else catalog["releaseGates"]
     for gate in gates:

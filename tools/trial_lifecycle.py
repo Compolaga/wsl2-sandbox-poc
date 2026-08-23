@@ -248,7 +248,7 @@ def status(root: Path) -> dict[str, Any]:
     manifest_ok, manifest_problem = _placement_manifest_ok(root)
     if "rollback-started" in present and "policy-removed" not in present:
         phase = "rollback-incomplete"
-        next_step = "Voltooi rollback-policy.ps1; verwijder geen pakketten."
+        next_step = "Voltooi scripts/windows/rollback-policy.ps1; verwijder geen pakketten."
         blocked = True
     elif "placement-started" in present and "policy-placed" not in present:
         phase = "placement-incomplete"
@@ -276,7 +276,7 @@ def status(root: Path) -> dict[str, Any]:
         blocked = False
     elif manifest_ok:
         phase = "placement-ready"
-        next_step = "Plaats uitsluitend via place-policy.sh of place-policy.ps1."
+        next_step = "Plaats uitsluitend via bin/sandbox policy place of scripts/windows/place-policy.ps1."
         blocked = False
     elif preparation_ok:
         phase = "prepared"

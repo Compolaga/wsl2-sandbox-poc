@@ -62,11 +62,11 @@ Een brede workspace geeft dus geen toegang tot een beschermd kindpad: de specifi
 De diepe module `tools/policy_artifact.py` is de enige plek die intake naar policy
 vertaalt en het resulterende artefact valideert. Daar staan padnormalisatie, veilige
 merge, verplichte locks, `_beschermd`/`denyRead`-dekking en workspace-dekking bij elkaar.
-`tools/policy_generator.py`, `generate-policy.sh`, `check-configs.sh` en de
+`tools/policy_generator.py`, `bin/sandbox policy generate`, `bin/sandbox policy validate` en de
 plaatsingspoort zijn dunne adapters naar dezelfde regels:
 
 ```bash
-./generate-policy.sh local/policy-input.json \
+./bin/sandbox policy generate local/policy-input.json \
   local/managed-settings.windows.generated.json
 ```
 
@@ -77,7 +77,7 @@ doelpad. Een bestaand doelbestand wordt niet zonder `--force` overschreven.
 Na generatie draait het script automatisch:
 
 ```bash
-./check-configs.sh local/managed-settings.windows.generated.json
+./bin/sandbox policy validate local/managed-settings.windows.generated.json
 ```
 
 De plaatsingspoort voert dezelfde validatie opnieuw uit. Een payload die na generatie
@@ -108,22 +108,23 @@ De regressietests zijn gewone Python-unittests en de bestaande shellzelftests:
 - bestaande settings blijven behouden;
 - security-locks kunnen niet worden verzwakt;
 - ongeldige of ontbrekende intake faalt zonder uitvoerbestand;
-- gegenereerde JSON slaagt voor `check-configs.sh`.
+- gegenereerde JSON slaagt voor `bin/sandbox policy validate`.
 
-`VERIFICATIE.md` krijgt daarnaast laptopstappen die de gekozen roots gebruiken: een normaal
+`VERIFICATION.md` krijgt daarnaast laptopstappen die de gekozen roots gebruiken: een normaal
 bestand per workspace moet leesbaar zijn, een tijdelijk canarybestand op ieder type beschermd
 pad niet. Testbestanden worden alleen met botsingscontrole gemaakt en marker-gebaseerd
 opgeruimd.
 
 ## Windows-mappen de distro in
 
-`bring-workspace.sh` kopieert standaard een Windows-pad naar een Linux-workspace. Twee
+`bin/sandbox workspace` kopieert standaard een Windows-pad naar een Linux-workspace. Twee
 argumenten zonder modus is copy. Bind-mount is geen peer: het script eist
 `--i-approved-bind` én `bindApproved: true` in de intake. Een symlink van Linux naar
 `/mnt/c` is verboden: dat is de omweg die AC-06 meet. Een Windows-junction naar
 `\\wsl$\<distro>\<linux-pad>` mag wél.
 
-Installeren, genereren, plaatsen en een groene `run.sh` lopen via `agent-gate.sh`. Zonder
+Installeren, genereren, plaatsen en een groene `bin/sandbox test` lopen via
+`scripts/policy/agent-gate.sh`. Zonder
 `local/consent.json` / bevestigde `local/policy-input.json` stoppen die scripts. De
 statische Windows-template is geen plaatsbare bron; alleen
 `local/managed-settings.windows.generated.json` gaat naar Program Files, en alleen na een
@@ -143,9 +144,9 @@ cleanup uit.
 
 ## Bewijsmatrix
 
-`run.sh` schrijft aan het einde [templates/proof-matrix.md](../../../templates/proof-matrix.md)
+`bin/sandbox test` schrijft aan het einde [templates/proof-matrix.md](../../../templates/proof-matrix.md)
 naar `evidence/<stempel>/proof-matrix.md`. De tweede developer-laptop blijft daar altijd
-open. Eén groene `run.sh` is geen vrijgave.
+open. Eén groene `bin/sandbox test` is geen vrijgave.
 
 ## Niet-doelen
 
