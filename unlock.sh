@@ -59,7 +59,7 @@ done
 
 echo
 # De slotregel hangt af van wat er echt is gebeurd. Anders meldt dit script "de policy is
-# eraf" terwijl er op slice 3 - de uitrol die naar Willem gaat - niets is verwijderd.
+# eraf" terwijl er op slice 3 - de uitrol die naar ITOps gaat - niets is verwijderd.
 if [ $VERWIJDERD -gt 0 ]; then
   echo "Klaar: $VERWIJDERD bestand(en) verwijderd. Start Claude Code opnieuw."
   echo "Terugzetten kan met: sudo cp '<pad>.$TS.bak' '<pad>'"

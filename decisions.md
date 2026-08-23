@@ -207,11 +207,11 @@ voeren.
 - Whitelisten, niet blacklisten.
 - Alle claims bewijzen door uit te voeren, zo dicht mogelijk op ZET's omgeving.
 - Admin Console valt af: Luc is Admin, geen Owner, en wil geen org-brede policy zetten.
-- Willem rolt `managed-settings.json` al uit via Intune; daar hangt onze config in.
+- ITOps rolt `managed-settings.json` al uit via Intune; daar hangt onze config in.
 - Repo's komen in `~/repos` in de distro, niet op `/mnt/c/`.
 - Voor de proef alleen Node als toolchain; uitbreiden gebeurt bij de implementatie.
 
-## Wat Willem nu heeft
+## Wat ITOps nu heeft
 
 Zijn bestand botst niet met het onze — wij voegen een `sandbox`-blok toe dat er nog niet is,
 en onze `Read(...)`-regels breiden zijn lijst uit. Drie dingen moeten wel terug naar hem: er

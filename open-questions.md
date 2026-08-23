@@ -1,23 +1,23 @@
 # Open vragen
 
 Twee vragen staan open: OQ-6 en OQ-8. OQ-5 en OQ-7 zijn opgelost. Twee zijn niet beantwoord
-maar uitgesteld tot de implementatie met Willem: OQ-1 en OQ-2.
+maar uitgesteld tot de implementatie met ITOps: OQ-1 en OQ-2.
 
 Het zwaarste risico zit niet bij de open vragen maar bij de uitgestelde: zolang OQ-1 niet
 beantwoord is, beschermt de policy fixture-paden en niet de echte klantdata.
 
 Voor een macOS-proef komt **OQ-8 als eerste aan de beurt** — verkeerd gokken sluit je daar
 direct buiten. OQ-8 raakt de Windows-payload niet, omdat die een expliciete `allowRead`
-heeft. **OQ-6** is geen technische onzekerheid maar een beslissing die Willem voor uitrol
+heeft. **OQ-6** is geen technische onzekerheid maar een beslissing die ITOps voor uitrol
 moet nemen, en staat daarom in de vrijgavepoort van de README. OQ-7 moet op een nieuwe
 doellaptop als regressiecontrole worden herhaald, maar de onderzoeksvraag zelf is beantwoord.
 
 | # | Vraag | Stand |
 |---|---|---|
-| OQ-1 | Waar staat de geïnventariseerde gevoelige data? | **Uitgesteld** tot de implementatie. Eigenaar: Luc en Willem samen. Voor de proef niet nodig — de fixture plant canaries op alle kandidaat-locaties — maar tot dit beantwoord is beschermt de policy fixture-paden, niet de echte. |
-| OQ-2 | Welke toolchains gebruiken ZET-developers? | **Uitgesteld** tot de implementatie. Eigenaar: Willem. Luc gaf 21-08 aan: bijna allemaal, proef doet alleen Node. `allowRead` en `allowedDomains` zijn daarop teruggebracht. |
-| OQ-3 | Wat staat er nú in Willems `managed-settings.json`? | **Beantwoord** 21-08 via screenshot. Zie [decisions.md](decisions.md), "Wat Willem nu heeft". |
-| OQ-4 | Welke Claude Code-versie rolt ZET uit? | **Beantwoord** door Luc, 21-08: latest. Of elke gebruikte key in die versie zit is niet nagetrokken — A10 in de handoff draagt Willem op dat per key in de documentatie te doen. |
+| OQ-1 | Waar staat de geïnventariseerde gevoelige data? | **Uitgesteld** tot de implementatie. Eigenaar: Luc en ITOps samen. Voor de proef niet nodig — de fixture plant canaries op alle kandidaat-locaties — maar tot dit beantwoord is beschermt de policy fixture-paden, niet de echte. |
+| OQ-2 | Welke toolchains gebruiken ZET-developers? | **Uitgesteld** tot de implementatie. Eigenaar: ITOps. Luc gaf 21-08 aan: bijna allemaal, proef doet alleen Node. `allowRead` en `allowedDomains` zijn daarop teruggebracht. |
+| OQ-3 | Wat staat er nú in ITOps' `managed-settings.json`? | **Beantwoord** 21-08 via screenshot. Zie [decisions.md](decisions.md), "Wat ITOps nu heeft". |
+| OQ-4 | Welke Claude Code-versie rolt ZET uit? | **Beantwoord** door Luc, 21-08: latest. Of elke gebruikte key in die versie zit is niet nagetrokken — A10 in de handoff draagt ITOps op dat per key in de documentatie te doen. |
 | OQ-5 | Hoe blokkeer je MCP in WSL2? | **Opgelost.** Via settings-keys in plaats van `managed-mcp.json` — die route is gemeten. Zie hieronder. |
 | OQ-6 | Kan een developer interactief goedkeuring geven voor lezen buiten de werkdirectory? | **Open.** Zie hieronder — dit is het gat dat AC-23 blootlegt. |
 | OQ-7 | Waarnaar resolvet `~` in een configbestand op de Windows-kant, gelezen vanuit de distro? | **Opgelost 22-08-2026.** Gemeten in Azure WSL2: naar de Linux-home (`/home/dev`), niet het Windows-profiel. Bewijs in `evidence/wsl2-dev-20260822-100200/`; herhaal als regressiecontrole op de doellaptop. |
@@ -42,11 +42,11 @@ In de configs staat nu:
 ```
 
 Een **lege array** betekent: geen enkele server toegestaan. Wil ZET bepaalde servers wél,
-vul die lijst dan met de servers uit Willems bestaande `managed-mcp.json`, herkenbaar aan
+vul die lijst dan met de servers uit ITOps' bestaande `managed-mcp.json`, herkenbaar aan
 hun `serverUrl` of `serverCommand` — niet aan hun naam, want die kan een developer zelf
 kiezen. `allowManagedMcpServersOnly` zorgt dat hij de lijst niet kan oprekken.
 
-**Er ligt al een tweede laag:** Willems `permissions.deny` bevat `mcp__*`, wat elke
+**Er ligt al een tweede laag:** ITOps' `permissions.deny` bevat `mcp__*`, wat elke
 MCP-tool blokkeert. Ook een settings-key, dus die reist ook mee. Servers kunnen dan hooguit
 laden, maar hun tools zijn onbruikbaar.
 
@@ -68,7 +68,7 @@ zoals de testsuite) mislukt dat en lijkt het op containment. In een interactieve
 wat developers de hele dag gebruiken — klikt de developer die toestemming gewoon weg.
 
 Daarom is AC-23 geen containment-test maar een handmatige constatering. **De vraag aan
-Willem:** dicht de uitrol dat af, bijvoorbeeld door een vaste `defaultMode` of door lezen
+ITOps:** dicht de uitrol dat af, bijvoorbeeld door een vaste `defaultMode` of door lezen
 buiten de werkdirectory te blokkeren? Zo niet, dan is de gedragsregel dat elk gevoelig pad
 letterlijk in `permissions.deny` moet staan, en is de inventaris uit OQ-1 geen luxe maar
 een voorwaarde.

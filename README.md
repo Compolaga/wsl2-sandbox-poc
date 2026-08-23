@@ -3,7 +3,7 @@
 Doel: één omgeving waarin aantoonbaar is dat beschermde paden **via Bash en zijn
 subprocessen** langs geen enkele route leesbaar zijn, dat de expliciet genoemde paden ook
 voor Claude's Read-tool dicht zitten, dat normaal development blijft werken, en dat een
-developer de policy niet kan oprekken. Wat hier groen staat, gaat naar Willem.
+developer de policy niet kan oprekken. Wat hier groen staat, gaat naar ITOps.
 
 > De publieke repository bevat geen ruwe historische meetuitvoer, omdat daarin lokale paden
 > en omgevingsmetadata staan. Zie [`evidence/README.md`](evidence/README.md). Nieuwe runs
@@ -17,7 +17,7 @@ OQ-6.
 Ubuntu 24.04) is gemeten dat een policy op `C:\Program Files\ClaudeCode\managed-settings.json`
 — waar Intune hem neerzet — daadwerkelijk door Claude Code in de distro wordt gelezen. Met
 negatieve controle: haal `wslInheritsWindowsSettings` weg en het effect verdwijnt. Bewijs in
-`evidence/wsl2-*`. Daarmee werkt Willems uitrolroute.
+`evidence/wsl2-*`. Daarmee werkt ITOps' uitrolroute.
 
 De OS-laag is drie keer gemeten en houdt alle drie de keren — negen probes, negen keer
 zoals bedoeld. Eerst in een Docker-container (`evidence/bubblewrap-*`), daarna op echte
@@ -176,7 +176,7 @@ geldig: zonder die controle kan "geen canary" ook betekenen dat er niets gelezen
 ## Verifiëren
 
 **Hoofdroute, met de hand: [VERIFICATIE.md](VERIFICATIE.md).** Twaalf controles in een gewone
-Claude Code-sessie, ongeveer vijftien minuten. Dat is wat Willem krijgt.
+Claude Code-sessie, ongeveer vijftien minuten. Dat is wat ITOps krijgt.
 
 De geautomatiseerde suite hieronder is **best effort, niet de vrijgavepoort**. Op 21-08-2026
 weigerde `claude -p` sommige leespogingen als exfiltratiepoging. Op 22-08-2026 bleek in de
@@ -202,11 +202,11 @@ Claude aan.
 
 `check-configs.sh` accepteert ook een pad: `./check-configs.sh /pad/naar/bestand.json` toetst
 de lock-keys en de `_beschermd`-consistentie op één willekeurig bestand. Dat is de check voor
-Willems samengevoegde payload vóór hij naar Intune gaat — juist bij het mergen sneuvelen die
+ITOps' samengevoegde payload vóór hij naar Intune gaat — juist bij het mergen sneuvelen die
 keys. Zonder argument bewaakt hij dat de drie uitrolconfigs dezelfde padlijsten en lock-keys blijven
 dragen; de macOS-testconfig staat daarbuiten en wordt alleen op breedte getoetst. Wordt een
 pad in één bestand toegevoegd en in de Windows-variant vergeten, dan gaat dat als gat naar
-Willem en merkt geen enkele testrun het — die toetst alleen de actieve slice.
+ITOps en merkt geen enkele testrun het — die toetst alleen de actieve slice.
 
 Een beschermd pad voeg je toe in het `_beschermd`-blok van elke config: sleutel is het pad
 voor de sandbox-laag, waarde de `Read(...)`-regel die dezelfde bescherming op de tool-laag

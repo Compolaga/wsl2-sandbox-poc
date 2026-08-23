@@ -1,6 +1,6 @@
 {
   "_comment": "SLICE 1 - ~/.claude/settings.json IN de WSL2-distro. Alleen om snel te itereren; dit is GEEN security boundary, want de developer bezit dit bestand. Twee lagen, want de sandbox dekt alleen Bash en zijn subprocessen: permissions.deny beschermt Claude's eigen Read-tool, sandbox.filesystem beschermt alles wat Bash start. Paden zijn voorlopig - definitief zodra OQ-1 en OQ-2 beantwoord zijn.",
-  "_paden": "DIT IS DE ENIGE PLEK WAAR PADEN STAAN. Wat Willem straks aanpast zijn de vier lijsten hieronder: permissions.deny (tools), sandbox.filesystem.denyRead / allowRead / allowWrite (Bash). Houd de eerste twee in sync - ze beschermen dezelfde paden op twee verschillende lagen.",
+  "_paden": "DIT IS DE ENIGE PLEK WAAR PADEN STAAN. Wat ITOps straks aanpast zijn de vier lijsten hieronder: permissions.deny (tools), sandbox.filesystem.denyRead / allowRead / allowWrite (Bash). Houd de eerste twee in sync - ze beschermen dezelfde paden op twee verschillende lagen.",
   "_beschermd": {
     "~/probe-a": "Read(~/probe-a/**)",
     "~/.ssh": "Read(~/.ssh/**)",

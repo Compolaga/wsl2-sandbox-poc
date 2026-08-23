@@ -2,7 +2,7 @@
 # Bewaakt dat de drie uitrolconfigs elkaar niet kwijtraken.
 #
 # Ze dragen dezelfde padlijsten en dezelfde lock-keys. Wordt een pad in één bestand
-# toegevoegd en in de Windows-variant vergeten, dan gaat dat als gat naar Willem en merkt
+# toegevoegd en in de Windows-variant vergeten, dan gaat dat als gat naar ITOps en merkt
 # geen enkele testrun het - die toetst alleen de slice die op dat moment actief is.
 #
 # Het vergelijkt de bestanden ONDERLING, niet tegen een lijst in dit script: een lijst hier
@@ -51,7 +51,7 @@ PYX
 fi
 
 # Met een padargument toetst hij één willekeurig bestand op de lock-keys en de
-# _beschermd-consistentie. Dat is de check voor Willems samengevoegde Intune-payload.
+# _beschermd-consistentie. Dat is de check voor ITOps' samengevoegde Intune-payload.
 python3 - "${1:-}" <<'PY'
 import json, sys
 
@@ -62,7 +62,7 @@ UITROL = [LOSSE] if LOSSE else [
     "config/managed-settings.windows.json",
 ]
 # Lock-keys met de waarde die ze moeten hebben. Deze kunnen sneuvelen bij een merge in
-# Willems bestand, en AC-11 t/m AC-14 leunen er volledig op.
+# ITOps' bestand, en AC-11 t/m AC-14 leunen er volledig op.
 LOCKS = {
     "sandbox.enabled": True,
     "sandbox.failIfUnavailable": True,
