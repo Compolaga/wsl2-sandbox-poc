@@ -43,6 +43,14 @@ class RepositoryLayoutTests(unittest.TestCase):
         self.assertFalse((ROOT / "HANDOFF.md").exists())
         self.assertFalse((ROOT / "VERIFICATIE.md").exists())
 
+    def test_obsolete_docker_test_adapter_stays_removed(self):
+        obsolete = (
+            ROOT / "test-lab" / "Dockerfile",
+            ROOT / "test-lab" / "measure-bubblewrap.sh",
+            ROOT / "test-lab" / "run.sh",
+        )
+        self.assertEqual([str(path.relative_to(ROOT)) for path in obsolete if path.exists()], [])
+
     def test_public_and_internal_shell_entrypoints_are_executable(self):
         paths = [ROOT / "bin" / "sandbox"]
         paths.extend((ROOT / "scripts" / "policy").glob("*.sh"))

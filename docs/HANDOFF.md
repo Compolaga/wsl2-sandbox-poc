@@ -354,8 +354,9 @@ Drie technische vangnetten blijven aanvullend gelden:
 
 Op macOS dekt de proef alleen de lokale settings- en managed-settingslagen. Bubblewrap,
 `/mnt/c`, `wslInheritsWindowsSettings`, AC-14/15/16 en het `cmd.exe`-gat vragen echte WSL2.
-Colima of Docker kan de bubblewrap-laag geïsoleerd meten, maar vervangt de Windows-route
-niet.
+De voormalige Docker-route mat alleen de bubblewrap-laag, vereiste `--privileged` en is
+daarom verwijderd. Gebruik de bestaande native-Linuxmeting voor de OS-laag; die is sterker,
+maar vervangt voor de Windows- en WSL2-grenzen nog steeds niet de echte WSL2-route.
 
 Gebruik je de Azure-route onder `test-lab/`, kopieer dan eerst het bewijs lokaal en
 verwijder daarna de wegwerpresourcegroep met `./test-lab/azure-wsl2-vm.sh weg`. De VM

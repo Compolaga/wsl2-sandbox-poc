@@ -195,8 +195,10 @@ gedocumenteerd, de vierde juist wel:
 `config/settings.slice1.json`: negen probes, negen keer zoals bedoeld. Beschermde paden dicht
 via `cat`, via een child-shellscript, via een grandchild python-subprocess, via een symlink
 vanuit de toegestane map, en voor een willekeurig ander pad in de home. Het project bleef
-lees- en schrijfbaar. Bewijs: `evidence/bubblewrap-*/bubblewrap.txt`, reproduceerbaar met
-`test-lab/measure-bubblewrap.sh`.
+lees- en schrijfbaar. Het historische bewijs blijft bewaard in
+`evidence/bubblewrap-*/bubblewrap.txt`. De bijbehorende Docker-reproductieroute is bewust
+verwijderd: die vereiste `--privileged`, kon de Windows- en WSL2-grenzen niet toetsen en is
+inmiddels ingehaald door de sterkere metingen op echte Linux-hardware en in WSL2.
 
 **Het patroon "map open, bestanden erin dicht" werkt.** Dat was onzeker: de README van
 `sandbox-runtime` zegt *"allowRead takes precedence over denyRead"*, wat zou betekenen dat een
