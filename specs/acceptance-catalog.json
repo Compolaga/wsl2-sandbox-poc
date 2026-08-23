@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "statuses": ["bezig", "pass", "fail", "ongeldig", "skip", "handmatig", "niet gedraaid", "niet deze run"],
+  "acceptanceCriteria": [
+    {"id":"AC-00p","description":"Voorwaarde: /tmp is schrijfbaar binnen de sandbox","kind":"automatic","evidence":"AC-00p.txt"},
+    {"id":"AC-01","description":"Bash: cat op token in de Linux-home","kind":"automatic","evidence":"AC-01.txt"},
+    {"id":"AC-02","description":"Bash: via een zelfgeschreven shellscript","kind":"automatic","evidence":"AC-02.txt"},
+    {"id":"AC-03p","description":"Voorwaarde: python3 bestaat in de sandbox","kind":"automatic","evidence":"AC-03p.txt"},
+    {"id":"AC-03","description":"Bash: via python subprocess","kind":"automatic","evidence":"AC-03.txt","dependsOn":["AC-03p"]},
+    {"id":"AC-04","description":"Read-tool op expliciet deny-pad in Linux-home","kind":"automatic","evidence":"AC-04.txt","dependsOn":["AC-09b"],"matrix":true},
+    {"id":"AC-05","description":"Bash: grep over beschermde mappen","kind":"automatic","evidence":"AC-05.txt"},
+    {"id":"AC-06","description":"Bash: symlink vanuit toegestane projectmap naar token","kind":"automatic","evidence":"AC-06.txt"},
+    {"id":"AC-07","description":"Bash: Windows-profiel via /mnt/c","kind":"automatic","evidence":"AC-07.txt"},
+    {"id":"AC-08","description":"Read-tool op expliciet deny-pad in Windows-profiel","kind":"automatic","evidence":"AC-08.txt","dependsOn":["AC-09b"],"matrix":true},
+    {"id":"AC-09","description":"Positieve Bash-controle leest toegestaan bestand","kind":"automatic","evidence":"AC-09.txt"},
+    {"id":"AC-09b","description":"Positieve Read-controle leest toegestaan bestand","kind":"automatic","evidence":"AC-09b.txt","matrix":true},
+    {"id":"AC-10","description":"Build en tests slagen binnen de sandbox","kind":"automatic","evidence":"AC-10.txt"},
+    {"id":"AC-11","description":"Eigen allowRead heropent de token niet","kind":"automatic","evidence":"AC-11.txt"},
+    {"id":"AC-11r","description":"Nulmeting: eigen allowRead werkt zonder managed laag","kind":"automatic","evidence":"AC-11r.txt"},
+    {"id":"AC-12","description":"Eigen sandbox.enabled=false zet sandbox niet uit","kind":"automatic","evidence":"AC-12.txt"},
+    {"id":"AC-12r","description":"Nulmeting: sandbox.enabled=false werkt zonder managed laag","kind":"automatic","evidence":"AC-12r.txt"},
+    {"id":"AC-13","description":"Eigen Read-allow verliest van managed deny","kind":"automatic","evidence":"AC-13.txt","dependsOn":["AC-09b"]},
+    {"id":"AC-14","description":"Zonder bwrap start Claude Code niet","kind":"manual","evidence":"VERIFICATIE.md","matrix":true},
+    {"id":"AC-15","description":"Alleen Windows-bestand maakt policy actief in WSL","kind":"manual","evidence":"VERIFICATIE.md","matrix":true},
+    {"id":"AC-16","description":"Zonder wslInheritsWindowsSettings verdwijnt het effect","kind":"manual","evidence":"VERIFICATIE.md","dependsOn":["AC-15"],"matrix":true},
+    {"id":"AC-17","description":"Bash: blacklistbestand in toegestane map is dicht","kind":"automatic","evidence":"AC-17.txt"},
+    {"id":"AC-18","description":"Read: blacklistbestand in toegestane map is dicht","kind":"automatic","evidence":"AC-18.txt","dependsOn":["AC-09b"],"matrix":true},
+    {"id":"AC-19","description":"Bash: beschermde submap in toegestane map is dicht","kind":"automatic","evidence":"AC-19.txt"},
+    {"id":"AC-20","description":"Gewoon bestand naast blacklist is leesbaar","kind":"automatic","evidence":"AC-20.txt"},
+    {"id":"AC-21","description":"Alleen managed MCP-servers zijn bruikbaar","kind":"manual","evidence":"VERIFICATIE.md","matrix":true},
+    {"id":"AC-22","description":"Bash-pad buiten toolregels is dicht door denyRead","kind":"automatic","evidence":"AC-22.txt"},
+    {"id":"AC-23","description":"Read buiten permissions.deny vraagt interactief goedkeuring","kind":"manual","evidence":"VERIFICATIE.md","matrix":true},
+    {"id":"AC-24p","description":"cmd.exe is buiten de sandbox aanroepbaar","kind":"condition","evidence":"AC-24p.txt"},
+    {"id":"AC-24","description":"cmd.exe leest de Windows-canary niet vanuit de sandbox","kind":"automatic","evidence":"AC-24.txt","dependsOn":["AC-24p"],"matrix":true}
+  ],
+  "releaseGates": [
+    {"id":"second-developer-laptop","description":"Tweede developer-laptop (niet deze machine) heeft dezelfde matrix groen, inclusief AC-16 en VERIFICATIE.md."},
+    {"id":"OQ-1","description":"OQ-1: echte klantdatapaden staan in _beschermd, niet alleen fixtures."},
+    {"id":"rollback-checked","description":"Policy is teruggedraaid of bewust blijven staan; rollbackmarker gecontroleerd."},
+    {"id":"fixtures-cleaned","description":"Fixtures opgeruimd (VERIFICATIE.md § Opruimen)."}
+  ]
+}

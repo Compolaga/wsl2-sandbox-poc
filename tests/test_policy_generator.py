@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 import json
+import io
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from policy_generator import IntakeError, generate, load_json, write_atomic  # noqa: E402
+from policy_generator import IntakeError, generate, load_json, main, write_atomic  # noqa: E402
+from policy_artifact import normalize_linux_path, validate_policy  # noqa: E402
 
 
 class GeneratorTests(unittest.TestCase):
@@ -124,6 +127,66 @@ class GeneratorTests(unittest.TestCase):
             self.assertEqual(out["cleanupPeriodDays"], 14)
             self.assertIn("Read(//**/OneDrive*/**)", out["permissions"]["deny"])
             self.assertEqual(out["allowedMcpServers"][0]["serverUrl"], "https://mcp.example.test")
+            self.assertTrue(out["sandbox"]["failIfUnavailable"])
+            self.assertTrue(out["sandbox"]["filesystem"]["allowManagedReadPathsOnly"])
+
+    def test_existing_security_lock_conflicts_fail_without_changing_output(self):
+        conflicts = (
+            (("sandbox", "failIfUnavailable"), False),
+            (("sandbox", "allowUnsandboxedCommands"), True),
+            (("sandbox", "filesystem", "allowManagedReadPathsOnly"), False),
+            (("sandbox", "network", "allowManagedDomainsOnly"), False),
+            (("wslInheritsWindowsSettings",), False),
+            (("allowManagedMcpServersOnly",), False),
+        )
+        for keys, value in conflicts:
+            with self.subTest(lock=".".join(keys)):
+                with tempfile.TemporaryDirectory() as td:
+                    td = Path(td)
+                    existing = {}
+                    current = existing
+                    for key in keys[:-1]:
+                        current = current.setdefault(key, {})
+                    current[keys[-1]] = value
+                    existing_path = td / "existing.json"
+                    existing_path.write_text(json.dumps(existing))
+                    intake = dict(self.intake)
+                    intake["existingManagedSettings"] = str(existing_path)
+                    intake_path = td / "intake.json"
+                    intake_path.write_text(json.dumps(intake))
+                    output_path = td / "generated.json"
+                    original = '{"do-not-change": true}\n'
+                    output_path.write_text(original)
+
+                    stdout = io.StringIO()
+                    with redirect_stdout(stdout):
+                        rc = main([
+                            str(intake_path),
+                            str(output_path),
+                            "--template", str(ROOT / "config" / "managed-settings.windows.json"),
+                            "--force",
+                        ])
+
+                    self.assertEqual(rc, 2)
+                    self.assertIn(".".join(keys), stdout.getvalue())
+                    self.assertIn("verwacht", stdout.getvalue())
+                    self.assertEqual(output_path.read_text(), original)
+
+    def test_generator_and_validator_share_normalization_and_locks(self):
+        intake = dict(self.intake)
+        intake["workspaces"] = [{"path": "/home/dev/work/client-a/", "access": "read-write"}]
+        out = generate(intake, self.template)
+        self.assertIn(normalize_linux_path("/home/dev/work/client-a/"), out["sandbox"]["filesystem"]["allowRead"])
+        self.assertEqual(validate_policy(out, windows=True, intake=intake), [])
+
+        out["sandbox"]["network"]["allowManagedDomainsOnly"] = False
+        errors = validate_policy(out, windows=True, intake=intake)
+        self.assertTrue(any("allowManagedDomainsOnly" in error for error in errors))
+
+        out = generate(intake, self.template)
+        out["allowManagedMcpServersOnly"] = False
+        errors = validate_policy(out, windows=True, intake=intake)
+        self.assertTrue(any("allowManagedMcpServersOnly" in error for error in errors))
 
 
 if __name__ == "__main__":

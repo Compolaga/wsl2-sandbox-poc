@@ -3,23 +3,18 @@
 set -uo pipefail
 cd "$(dirname "$0")"
 
-./agent-gate.sh place || exit 2
-
-GEN="local/managed-settings.windows.generated.json"
-[ -f "$GEN" ] || { echo "FOUT: $GEN ontbreekt."; exit 2; }
-
-case "$GEN" in
-  *config/managed-settings.windows.json)
-    echo "FOUT: de statische template mag niet geplaatst worden."; exit 2 ;;
-esac
+MANIFEST="local/placement-manifest.json"
+python3 tools/placement_gate.py create --root "$PWD" --manifest "$MANIFEST" || exit $?
+python3 tools/placement_gate.py verify --root "$PWD" --manifest "$MANIFEST" >/dev/null || exit $?
+python3 tools/trial_lifecycle.py plan place --root "$PWD" || exit $?
 
 command -v powershell.exe >/dev/null || {
   echo "FOUT: powershell.exe ontbreekt. Draai place-policy.ps1 vanuit een Windows-admin-PowerShell:"
-  echo "  .\\place-policy.ps1 -Source <windows-pad-naar-generated.json>"
+  echo "  .\\place-policy.ps1 -Manifest <windows-pad-naar-placement-manifest.json>"
   exit 2
 }
 
-WIN_GEN="$(wslpath -w "$PWD/$GEN")"
+WIN_MANIFEST="$(wslpath -w "$PWD/$MANIFEST")"
 WIN_PS1="$(wslpath -w "$PWD/place-policy.ps1")"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$WIN_PS1" -Source "$WIN_GEN"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$WIN_PS1" -Manifest "$WIN_MANIFEST"
 echo "Als de kopie lukte: wsl --shutdown en open de distro opnieuw."

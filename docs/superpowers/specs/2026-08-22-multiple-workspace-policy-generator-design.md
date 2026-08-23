@@ -59,8 +59,11 @@ Een brede workspace geeft dus geen toegang tot een beschermd kindpad: de specifi
 
 ## Generator en uitvoer
 
-Een Pythonmodule `tools/policy_generator.py` wordt de enige plek die intake naar policy
-vertaalt. Een dun script `generate-policy.sh` verzorgt de CLI:
+De diepe module `tools/policy_artifact.py` is de enige plek die intake naar policy
+vertaalt en het resulterende artefact valideert. Daar staan padnormalisatie, veilige
+merge, verplichte locks, `_beschermd`/`denyRead`-dekking en workspace-dekking bij elkaar.
+`tools/policy_generator.py`, `generate-policy.sh`, `check-configs.sh` en de
+plaatsingspoort zijn dunne adapters naar dezelfde regels:
 
 ```bash
 ./generate-policy.sh local/policy-input.json \
@@ -76,6 +79,10 @@ Na generatie draait het script automatisch:
 ```bash
 ./check-configs.sh local/managed-settings.windows.generated.json
 ```
+
+De plaatsingspoort voert dezelfde validatie opnieuw uit. Een payload die na generatie
+is aangepast, een lock verzwakt, referentiebescherming mist of niet meer alle
+intake-workspaces dekt, kan daardoor niet worden geplaatst.
 
 Daarna toont het een samenvatting van workspaces, schrijftoegang, beschermde paden en
 netwerktoegang. Het installeert niets.
@@ -120,7 +127,19 @@ Installeren, genereren, plaatsen en een groene `run.sh` lopen via `agent-gate.sh
 `local/consent.json` / bevestigde `local/policy-input.json` stoppen die scripts. De
 statische Windows-template is geen plaatsbare bron; alleen
 `local/managed-settings.windows.generated.json` gaat naar Program Files, en alleen na een
-geslaagde rode nulmeting.
+geslaagde rode nulmeting. De generate-poort controleert hetzelfde intakepad dat de
+generator leest. Vlak voor plaatsing bindt `tools/placement_gate.py` alle prerequisites
+en de exacte payload met SHA-256 in `local/placement-manifest.json`. De WSL- en
+PowerShell-adapters verifiëren dat manifest opnieuw; PowerShell accepteert geen losse
+`-Source`.
+
+De proeflifecycle is een aparte diepe module in `tools/trial_lifecycle.py`. De kleine
+interface (`status`, `verify`, `plan`, `record`) verbergt overgangsregels, een append-only
+SHA-256-keten en bewijscontrole. Bash en PowerShell blijven platformadapters. Daardoor is
+een hervatte proef niet afhankelijk van geheugen of documentinterpretatie: onderbroken
+plaatsing en rollback zijn expliciete fasen, en cleanup blijft dicht tot eerst de policy
+weg is en daarna de Claude-runtime opnieuw is bewezen. De module voert geen destructieve
+cleanup uit.
 
 ## Bewijsmatrix
 

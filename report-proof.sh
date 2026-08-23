@@ -8,6 +8,7 @@ if [ -z "$EV" ]; then
 fi
 [ -n "$EV" ] && [ -d "$EV" ] || { echo "FOUT: geef een evidence-map: ./report-proof.sh evidence/<stempel>"; exit 2; }
 command -v python3 >/dev/null || { echo "FOUT: python3 ontbreekt."; exit 2; }
+[ ! -f "$EV/results.tsv" ] || python3 tools/proof_ledger.py --evidence "$EV"
 python3 tools/report_proof.py --evidence "$EV"
 echo
 echo "Eén groene run.sh is geen vrijgave. De tweede developer-laptop staat nog open."

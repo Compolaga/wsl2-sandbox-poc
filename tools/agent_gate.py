@@ -6,6 +6,14 @@ import argparse
 import json
 from pathlib import Path
 
+from policy_artifact import (
+    PolicyError,
+    assert_workspace,
+    load_json as load_policy_json,
+    normalize_linux_path,
+    validate_policy,
+)
+
 ASKED_VIA = {"AskUserQuestion", "CursorAskQuestion", "human-cli"}
 PLACE_NAME = "managed-settings.windows.generated.json"
 TEMPLATE_NAME = "managed-settings.windows.json"
@@ -65,17 +73,32 @@ def require_consent(root: Path, cluster: str | None = None) -> dict:
     return data
 
 
-def require_intake(root: Path) -> dict:
-    data = load_json(intake_path(root))
-    require_asked_via(data, "local/policy-input.json")
+def require_intake(root: Path, path: Path | None = None) -> dict:
+    path = path or intake_path(root)
+    data = load_json(path)
+    label = str(path)
+    require_asked_via(data, label)
     if data.get("confirmed") is not True:
         raise GateError(
-            "local/policy-input.json is niet bevestigd. "
+            f"{label} is niet bevestigd. "
             "Vat de AskUserQuestion-antwoorden samen en zet confirmed: true pas na ja."
         )
     workspaces = data.get("workspaces") or []
     if not workspaces:
-        raise GateError("local/policy-input.json heeft geen workspaces")
+        raise GateError(f"{label} heeft geen workspaces")
+    allow_mnt = bool(data.get("allowWindowsMounts"))
+    seen = set()
+    for workspace in workspaces:
+        try:
+            path = normalize_linux_path(workspace.get("path", ""))
+            assert_workspace(path, allow_mnt)
+        except PolicyError as exc:
+            raise GateError(f"ongeldige workspace in {label}: {exc}") from exc
+        if path in seen:
+            raise GateError(f"dubbele workspace {path} in {label}")
+        seen.add(path)
+        if workspace.get("access", "read-write") not in {"read-only", "read-write"}:
+            raise GateError(f"ongeldige access voor workspace {path}")
     if data.get("allowWindowsMounts") is True and data.get("allowWindowsMountsConfirmed") is not True:
         raise GateError(
             "allowWindowsMounts staat aan zonder allowWindowsMountsConfirmed: true"
@@ -100,17 +123,15 @@ def require_bind(root: Path) -> dict:
     return data
 
 
-def payload_matches_intake(payload: dict, intake: dict) -> None:
-    allow = payload.get("sandbox", {}).get("filesystem", {}).get("allowRead") or []
-    missing = []
-    for ws in intake.get("workspaces") or []:
-        pad = str(ws.get("path", "")).rstrip("/")
-        if pad and pad not in allow:
-            missing.append(pad)
-    if missing:
-        raise GateError(
-            "gegenereerde payload mist workspaces uit de intake: " + ", ".join(missing)
-        )
+def payload_matches_intake(payload: dict, intake: dict, reference_protected: dict | None = None) -> None:
+    errors = validate_policy(
+        payload,
+        windows=True,
+        intake=intake,
+        reference_protected=reference_protected,
+    )
+    if errors:
+        raise GateError("gegenereerde payload is ongeldig: " + "; ".join(errors))
 
 
 def require_generated(root: Path, intake: dict) -> Path:
@@ -121,7 +142,18 @@ def require_generated(root: Path, intake: dict) -> Path:
         )
     if pad.name == TEMPLATE_NAME or pad.resolve() == (root / "config" / TEMPLATE_NAME).resolve():
         raise GateError("de statische template mag niet als payload dienen")
-    payload_matches_intake(load_json(pad), intake)
+    try:
+        payload = load_policy_json(pad)
+    except PolicyError as exc:
+        raise GateError(str(exc)) from exc
+    reference_path = root / "config" / TEMPLATE_NAME
+    if not reference_path.is_file():
+        reference_path = repo_root() / "config" / TEMPLATE_NAME
+    try:
+        reference = load_policy_json(reference_path).get("_beschermd", {})
+    except PolicyError as exc:
+        raise GateError(str(exc)) from exc
+    payload_matches_intake(payload, intake, reference)
     return pad
 
 
@@ -179,6 +211,10 @@ def main(argv: list[str] | None = None) -> int:
                  "generate", "bind", "place", "green", "voorbereiding"),
     )
     p.add_argument("--root", default=str(repo_root()))
+    p.add_argument(
+        "--intake",
+        help="intakebestand voor de generate-poort; standaard local/policy-input.json",
+    )
     args = p.parse_args(argv)
     root = Path(args.root)
     try:
@@ -195,7 +231,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.commando == "install-node":
             require_consent(root, "nodeClaude")
         elif args.commando == "generate":
-            require_intake(root)
+            require_intake(root, Path(args.intake) if args.intake else None)
         elif args.commando == "bind":
             require_bind(root)
         elif args.commando == "place":

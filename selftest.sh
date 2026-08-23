@@ -136,6 +136,14 @@ if grep -qE '^\s+(notoken|marker)\)\s+grep -qF' run.sh; then
   FOUT=$((FOUT+1)); printf '  FOUT  run.sh oordeelt zelf weer over notoken/marker\n'
 else printf '  OK    run.sh oordeelt niet zelf meer\n'; fi
 
+echo
+echo "== bewijsledger =="
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_proof_ledger.py' >/dev/null 2>&1; then
+  GOED=$((GOED+1)); printf '  OK    acceptatiecatalogus en runmanifest zijn intern consistent\n'
+else
+  FOUT=$((FOUT+1)); printf '  FOUT  acceptatiecatalogus of runmanifest is inconsistent\n'
+fi
+
 if [ $SCHRIJF -eq 1 ]; then
   D="evidence/selftest-$(date +%Y%m%d-%H%M%S)"; mkdir -p "$D"
   {

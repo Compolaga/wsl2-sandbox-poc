@@ -32,6 +32,7 @@ fi
 
 ./agent-gate.sh install || exit 2
 ./agent-gate.sh voorbereiding || exit 2
+python3 tools/trial_lifecycle.py plan install --root "$PWD" || exit 2
 
 if [ "${1:-}" = "--dry-run" ]; then
   python3 - <<'PY'
@@ -44,6 +45,9 @@ print("  nodeClaude:", "claude-code + sandbox-runtime" if d.get("nodeClaude") el
 PY
   exit 0
 fi
+
+python3 tools/trial_lifecycle.py record install-started --root "$PWD" \
+  --evidence local/consent.json --if-absent || exit 2
 
 cluster() { python3 -c "import json,sys; d=json.load(open('local/consent.json')); sys.exit(0 if d.get(sys.argv[1]) is True else 1)" "$1"; }
 
@@ -85,4 +89,12 @@ else
   echo "Node/Claude niet goedgekeurd; installeer ze niet."
 fi
 
+{
+  echo "recordedAt: $(date -Iseconds)"
+  echo "claude: $(claude --version 2>&1 | head -1 || true)"
+  echo "bwrap: $(bwrap --version 2>&1 | head -1 || true)"
+  echo "socat: $(command -v socat || true)"
+} > local/install-completed.txt
+python3 tools/trial_lifecycle.py record install-completed --root "$PWD" \
+  --evidence local/install-completed.txt --if-absent || exit 2
 echo "install-prereqs klaar. Log in met: claude auth login"

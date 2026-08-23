@@ -3,7 +3,7 @@
 #
 # Het script is policy-agnostisch: het toetst het gedrag van de policy die op DIT moment
 # actief is. Welke policy dat is (slice 1, 2 of 3) bepaal je door het juiste configbestand
-# neer te zetten - zie README.md.
+# neer te zetten - zie HANDOFF.md, "Uitvoerfasen".
 #
 #   ./run.sh              alle tests die op deze machine horen te draaien
 #   ./run.sh --red        nulmeting: draai dit op een machine ZONDER policy. Elke
@@ -173,6 +173,11 @@ if [ $RED -eq 0 ]; then
     echo "Doorloop de Agentpoort in HANDOFF.md. Nulmeting zonder policy: ./run.sh --red"
     exit 2
   fi
+  # Een bestaande laptop-lifecycle maakt de volgorde afdwingbaar. Mac-slices en
+  # oudere runs zonder lokaal journal behouden hun zelfstandige testinterface.
+  if [ -n "${WSL_DISTRO_NAME:-}" ] && [ -f local/trial-lifecycle.jsonl ]; then
+    python3 tools/trial_lifecycle.py plan verify --root "$PWD" || exit 2
+  fi
 fi
 
 # ================================================================= preflight: fixture
@@ -238,6 +243,17 @@ trap opruimen_tmp EXIT
 EV="evidence/$STAMP$([ $RED -eq 1 ] && echo '-red')${FILTER:+-$FILTER}"
 mkdir -p "$EV"
 
+# results.tsv is de kleine overdracht van de probe-run naar de bewijsledger. De ledger
+# valideert ids/statussen tegen specs/acceptance-catalog.json en schrijft run.json; zo hoeven
+# console-uitvoer en bewijsmatrix de betekenis van resultaten niet elk opnieuw af te leiden.
+schrijf_runmanifest() {
+  printf '%s' "$RESULTS" > "$EV/results.tsv"
+  python3 tools/proof_ledger.py --evidence "$EV" || {
+    echo "FOUT: het gestructureerde runmanifest kon niet worden geschreven."
+    return 1
+  }
+}
+
 {
   echo "run:        $STAMP"
   echo "mode:       $([ $RED -eq 1 ] && echo 'ROOD (nulmeting, geen policy)' || echo 'normaal')"
@@ -249,7 +265,10 @@ mkdir -p "$EV"
   echo "seccomp:    $(npm ls -g @anthropic-ai/sandbox-runtime 2>&1 | sed -n '2p' | tr -d ' ' || echo onbekend)"
   echo "verwacht:   ${#VERWACHT[@]} tests: ${VERWACHT[*]}"
   echo "-- suite (welke versie dit bewijs heeft voortgebracht) --"
-  for f in run.sh fixture.sh check-configs.sh config/*.json; do
+  for f in run.sh fixture.sh beoordeel.sh check-configs.sh \
+           tools/agent_gate.py tools/policy_artifact.py tools/proof_ledger.py \
+           tools/report_proof.py tools/placement_gate.py tools/trial_lifecycle.py \
+           specs/acceptance-catalog.json config/*.json; do
     echo "  $(shasum -a 256 "$f" 2>/dev/null || sha256sum "$f")"
   done
   echo "-- geinstalleerde configbestanden --"
@@ -325,6 +344,7 @@ skip() {
 handmatig() {
   local id="$1" desc="$2" why="$3"
   if [ -n "$FILTER" ] && [ "$FILTER" != "$id" ]; then return 0; fi
+  zet_resultaat "$id" handmatig "$desc"
   MANUAL=$((MANUAL+1)); printf '  HAND  %-7s %s  (%s)\n' "$id" "$desc" "$why"
   record "$id" "HANDMATIG: $why"
 }
@@ -391,6 +411,7 @@ if [ "$(status_van AC-00p)" != "pass" ]; then
     echo "reden:      AC-00p niet groen; zie AC-00p.txt"
     echo "exitcode:   2"
   } > "$EV/samenvatting.txt"
+  schrijf_runmanifest || true
   exit 2
 fi
 
@@ -586,13 +607,13 @@ fi
 unset LOCKDOWN
 
 handmatig AC-14 "bwrap verwijderd -> Claude Code start niet (failIfUnavailable)" \
-  "vernietigend - procedure in README.md"
+  "vernietigend - procedure in VERIFICATIE.md"
 handmatig AC-15 "policy actief in WSL met ALLEEN het Windows-bestand" \
-  "vereist Windows-admin - procedure in README.md"
+  "vereist Windows-admin - procedure in VERIFICATIE.md"
 handmatig AC-16 "zonder wslInheritsWindowsSettings is de policy NIET actief" \
-  "negatieve controle bij AC-15 - procedure in README.md"
-handmatig AC-21 "managed-mcp.json van Intune werkt ook in WSL2" \
-  "'claude mcp list' - procedure in README.md"
+  "negatieve controle bij AC-15 - procedure in VERIFICATIE.md"
+handmatig AC-21 "alleen managed MCP-servers zijn bruikbaar in WSL2" \
+  "allowedMcpServers + allowManagedMcpServersOnly - procedure in VERIFICATIE.md"
 
 # ================================================================= uitkomst
 echo
@@ -604,6 +625,7 @@ elif [ "$(status_van AC-09b)" != "pass" ]; then
   for t in "${READ_TESTS[@]}"; do
     [ "$(status_van "$t")" = "pass" ] || continue
     ONGELDIG+=("$t"); PASS=$((PASS-1)); FAIL=$((FAIL+1))
+    zet_resultaat "$t" ongeldig "$(desc_van "$t")"
     FAILED+=("$t: $(desc_van "$t") - ONGELDIG, AC-09b toonde niet aan dat de Read-route werkt")
   done
   if [ ${#ONGELDIG[@]} -gt 0 ]; then
@@ -640,8 +662,10 @@ EXIT=$([ "$FAIL" -eq 0 ] && echo 0 || echo 1)
   [ ${#FAILED[@]} -gt 0 ] && { echo "-- niet in orde --"; printf '  %s\n' "${FAILED[@]}"; }
 } > "$EV/samenvatting.txt"
 
+schrijf_runmanifest || exit 2
+
 echo "================================================"
-cat "$EV/samenvatting.txt"
+python3 tools/proof_ledger.py --evidence "$EV" --read-only --quiet --print-summary
 echo
 python3 tools/report_proof.py --evidence "$EV" || \
   echo "bewijsmatrix kon niet worden geschreven; vul templates/proof-matrix.md zelf in."

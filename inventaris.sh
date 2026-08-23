@@ -30,6 +30,12 @@ ls -la /etc/apt/sources.list.d /etc/apt/preferences.d > "$DOEL/apt-config.txt" 2
 
 cp -a "$DOEL"/. "$KOPIE"/
 printf '%s\n' "$KOPIE" > "$DOEL/kopie-pad.txt"
+if command -v python3 >/dev/null && [ "$DOEL" = "local/beginstaat" ]; then
+  python3 tools/trial_lifecycle.py record beginstate-recorded --root "$PWD" \
+    --evidence local/beginstaat/omgeving.txt --if-absent || exit 2
+else
+  echo "lifecycle: beginstaat wordt bij de installatiepoort uit de bestanden afgeleid"
+fi
 echo "beginstaat: $DOEL"
 echo "kopie buiten de clone: $KOPIE"
 echo "Zonder deze map is later niet meer te zien wat er al stond."

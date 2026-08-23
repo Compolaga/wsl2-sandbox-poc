@@ -67,7 +67,10 @@ trap 'rm -rf "$WERK"' EXIT
 # Altijd de huidige lokale suite meten; evidence en testomgeving horen niet in het pakket.
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 tar czf "$WERK/pakket.tgz" -C "$ROOT" \
-  run.sh fixture.sh beoordeel.sh check-configs.sh selftest.sh config
+  run.sh fixture.sh beoordeel.sh check-configs.sh selftest.sh config \
+  tools/agent_gate.py tools/policy_artifact.py tools/proof_ledger.py tools/report_proof.py \
+  tools/placement_gate.py tools/trial_lifecycle.py \
+  specs/acceptance-catalog.json
 
 # ---------------------------------------------------------------- distro-script
 cat > "$WERK/inner2.sh" <<'INNER'

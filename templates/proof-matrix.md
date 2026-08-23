@@ -1,7 +1,8 @@
 # Bewijsmatrix — invullen aan het einde van de run
 
 `run.sh` schrijft een ingevulde kopie naar `evidence/<stempel>/proof-matrix.md`. Dit bestand
-is het sjabloon. Vul ontbrekende handmatige rijen aan met **pass**, **fail**, **ongeldig**,
+is het handmatige noodsjabloon; de automatische rijen en vrijgavepoorten komen uit
+`specs/acceptance-catalog.json`. Vul ontbrekende handmatige rijen aan met **pass**, **fail**, **ongeldig**,
 **niet gedraaid** of **handmatig nog open**.
 Claim nooit "de sandbox houdt" als een rij die hieronder als vrijgavepoort staat nog open is.
 
@@ -31,7 +32,6 @@ Laptop: ____________________   Distro/user: ____________________   Datum: ______
 
 - [ ] Tweede **developer-laptop** (niet de laptop waarop deze run draaide) heeft dezelfde matrix groen, inclusief AC-16 en VERIFICATIE.md.
 - [ ] OQ-1: echte klantdatapaden staan in `_beschermd`, niet alleen fixtures.
-- [ ] OQ-6: besluit over interactieve Read-goedkeuring staat in `decisions.md`.
 - [ ] Policy is teruggedraaid of bewust blijven staan; rollbackmarker gecontroleerd.
 - [ ] Fixtures opgeruimd (`VERIFICATIE.md` § Opruimen).
 

@@ -3,6 +3,7 @@
 # Haalt nooit pakketten weg zolang de policy nog een sandbox eist.
 set -uo pipefail
 cd "$(dirname "$0")"
+source ./tools/teardown_lifecycle.sh
 
 echo "== teardown: eerst bewijs, dan policy, pas daarna de rest =="
 
@@ -52,12 +53,16 @@ if [ "$POLICY_ACTIEF" -eq 1 ]; then
 fi
 
 if ! command -v claude >/dev/null; then
-  echo "LET OP: claude ontbreekt. Controleer of dat zo hoorde vóór de proef."
+  echo "STOP: claude ontbreekt. Cleanup blijft dicht tot de runtime na policy-rollback is geverifieerd."
+  exit 2
 else
   if claude --version >/dev/null 2>&1; then
     echo "claude start nog. Goed: de policy is geen val meer."
+    lifecycle_cleanup_gate "$PWD" "$PWD/tools/trial_lifecycle.py" \
+      "$(claude --version 2>&1 | head -1)" || exit 2
   else
-    echo "LET OP: claude start niet. Stop met pakketten weghalen tot dat is opgelost."
+    echo "STOP: claude start niet. Cleanup blijft dicht tot dat is opgelost."
+    exit 2
   fi
 fi
 

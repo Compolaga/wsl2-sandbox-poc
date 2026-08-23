@@ -1,7 +1,8 @@
 # Exporteert de WSL-distro vóór de proef. Geen snapshot betekent geen proef.
 param(
     [string]$Distro = "Ubuntu",
-    [string]$Tar = ""
+    [string]$Tar = "",
+    [string]$Repo = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -34,7 +35,20 @@ $meta = [ordered]@{
 }
 $json = [System.IO.Path]::ChangeExtension($Tar, ".json")
 $meta | ConvertTo-Json | Set-Content -LiteralPath $json -Encoding utf8
+if (-not $Repo) { $Repo = $PSScriptRoot }
+$localDir = Join-Path $Repo "local"
+New-Item -ItemType Directory -Force -Path $localDir | Out-Null
+$localMeta = Join-Path $localDir "snapshot.json"
+Copy-Item -LiteralPath $json -Destination $localMeta -Force
+$linuxRepo = (& wsl.exe wslpath -u -- $Repo | Select-Object -Last 1)
+if ($LASTEXITCODE -eq 0 -and $linuxRepo) {
+    & wsl.exe python3 "$linuxRepo/tools/trial_lifecycle.py" record snapshot-recorded `
+        --root $linuxRepo --evidence local/snapshot.json --if-absent
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "Snapshot bestaat, maar lifecycle-registratie lukte niet. Ga niet verder tot local/snapshot.json en het journal kloppen."
+    }
+}
 Write-Host "snapshot: $Tar ($([math]::Round($item.Length / 1MB)) MB)"
 Write-Host "meta:     $json"
-Write-Host "Kopieer die json naar de clone in WSL als local/snapshot.json voordat je verdergaat."
+Write-Host "lokaal:   $localMeta"
 Write-Host "Terugzetten: .\herstel-snapshot.ps1 -Distro $Distro -Tar `"$Tar`" -Bevestig"

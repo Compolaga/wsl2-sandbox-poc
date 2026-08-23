@@ -7,11 +7,7 @@ import json
 import re
 from pathlib import Path
 
-ALWAYS_OPEN = (
-    "Tweede developer-laptop (niet deze machine) heeft dezelfde matrix groen, inclusief AC-16 en VERIFICATIE.md.",
-    "OQ-1: echte klantdatapaden staan in _beschermd, niet alleen fixtures.",
-    "OQ-6: besluit over interactieve Read-goedkeuring staat in decisions.md.",
-)
+from proof_ledger import CATALOG_PATH, load_catalog, load_manifest
 
 
 def load_json(path: Path) -> dict | None:
@@ -56,6 +52,18 @@ def ac_status(evidence: Path, ac: str, sam: dict) -> str:
     return "pass" if sam.get("exit") == "0" else "niet eenduidig"
 
 
+def manifest_status(manifest: dict | None, ac: str) -> str | None:
+    if not manifest:
+        return None
+    for result in manifest.get("results", []):
+        if result.get("id") == ac:
+            return {
+                "handmatig": "handmatig nog open",
+                "skip": "niet gedraaid",
+            }.get(result.get("status"), result.get("status"))
+    return None
+
+
 def row(naam: str, bewijs: str, uitkomst: str, bron: str) -> str:
     return f"| {naam} | {bewijs} | {uitkomst} | {bron} |"
 
@@ -66,6 +74,9 @@ def build(root: Path, evidence: Path) -> str:
     generated = root / "local" / "managed-settings.windows.generated.json"
     sam = parse_samenvatting(evidence / "samenvatting.txt")
     notes = load_json(root / "local" / "proof-notes.json") or {}
+    manifest = load_manifest(evidence)
+    catalog_path = root / "specs" / "acceptance-catalog.json"
+    catalog = load_catalog(catalog_path if catalog_path.is_file() else CATALOG_PATH)
 
     consent_ok = "pass" if consent and consent.get("askedVia") else "fail"
     intake_ok = "pass" if intake and intake.get("confirmed") is True else "fail"
@@ -103,32 +114,22 @@ def build(root: Path, evidence: Path) -> str:
         row("`run.sh --red`", "Containmentproeven lekken zonder policy", red_ok, "samenvatting.txt"),
         row("`run.sh` groen", "Canary komt niet terug; toegestane paden wel", green_ok, "samenvatting.txt"),
     ]
-    for ac, uitleg in (
-        ("AC-04", "Read-tool op expliciete deny-paden"),
-        ("AC-08", "Read-tool op expliciete deny-paden"),
-        ("AC-09b", "Read-tool geeft een toegestaan bestand wél terug"),
-        ("AC-18", "Read-tool op expliciete deny-paden"),
-        ("AC-14", "Zonder bwrap start Claude Code niet"),
-        ("AC-15", "Alleen het Windows-bestand maakt de policy actief in WSL"),
-        ("AC-16", "Zonder wslInheritsWindowsSettings verdwijnt het effect"),
-        ("AC-21", "MCP toevoegen in de distro wordt geweigerd"),
-        ("AC-23", "Interactief: pad buiten permissions.deny vraagt goedkeuring"),
-        ("AC-24", "cmd.exe leest de canary niet vanuit de sandbox"),
-    ):
+    for meta in (item for item in catalog["acceptanceCriteria"] if item.get("matrix")):
+        ac, uitleg = meta["id"], meta["description"]
         standaard = "handmatig nog open"
-        if ac in {"AC-04", "AC-08", "AC-09b", "AC-18", "AC-24"}:
-            standaard = ac_status(evidence, ac, sam)
+        if meta["kind"] != "manual":
+            standaard = manifest_status(manifest, ac) or ac_status(evidence, ac, sam)
         uitkomst = notes.get(ac, standaard)
-        regels.append(row(ac, uitleg, uitkomst, f"{ac}.txt" if (evidence / f"{ac}.txt").is_file() else "handmatig"))
+        bewijs = meta["evidence"] if (evidence / meta["evidence"]).is_file() else (
+            "handmatig" if meta["kind"] == "manual" else meta["evidence"]
+        )
+        regels.append(row(ac, uitleg, uitkomst, bewijs))
     regels.append(row("VERIFICATIE.md", "Twaalf interactieve controles in een gewone sessie", verificatie, "VERIFICATIE.md"))
     regels += ["", "## Nog niet vrijgegeven — dit blijft open", ""]
-    for item in ALWAYS_OPEN:
-        regels.append(f"- [ ] {item}")
-    for extra in (
-        "Policy is teruggedraaid of bewust blijven staan; rollbackmarker gecontroleerd.",
-        "Fixtures opgeruimd (VERIFICATIE.md § Opruimen).",
-    ):
-        regels.append(f"- [ ] {extra}")
+    gates = manifest.get("releaseGates", []) if manifest else catalog["releaseGates"]
+    for gate in gates:
+        mark = "x" if gate.get("status") == "closed" else " "
+        regels.append(f"- [{mark}] {gate['description']}")
     regels += [
         "",
         "Zonder de tweede developer-laptop is dit een proef op één machine, geen uitrolklaar bewijs.",

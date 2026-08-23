@@ -73,8 +73,10 @@ geblokkeerd (srt 0.0.73, met seccomp-filter). OQ-7 is daarmee ook beantwoord: `~
 in de distro naar de Linux-home (`/home/dev`), niet naar het Windows-profiel. Bewijs:
 `evidence/wsl2-dev-20260822-100200/` (meting + provenance).
 
-Nog niet gemeten, want het vraagt een ingelogde Claude: de Read-tool-laag (AC-04/08/18) en
-gedrag in een echte interactieve sessie. De VM is na de meting verwijderd.
+In deze Azure-meting niet gemeten, want dat vraagt een ingelogde Claude: de
+Read-tool-laag (AC-04/08/18) en gedrag in een echte interactieve sessie. De VM is na de
+meting verwijderd. Die laag is later wel handmatig op een Windows-laptop geverifieerd; zie
+de aanvulling hieronder.
 
 ## Geautomatiseerde Claude-probes in WSL2, 22-08-2026
 
@@ -112,6 +114,29 @@ De teardown van diezelfde dag is mislukt: geen distro-snapshot, UAC bij terugdra
 keer weggeklikt, `bwrap` eerder weg dan de policy. Besluit: geen snapshot betekent geen
 proef; afbreken in omgekeerde volgorde; `fixture.sh --clean` is geen teardown. Zie
 [HANDOFF.md § Terugdraaien](HANDOFF.md#terugdraaien).
+
+### Aanvullende verificatie op Windows-laptop, uitgevoerd 23-08-2026
+
+**De automatische suite én de handmatige controles uit `VERIFICATIE.md` zijn op 23-08-2026
+op een Windows-laptop groen doorlopen, inclusief de Read-tool-controles AC-04/08/18.**
+Daarmee is de eerdere status “nog niet gemeten” achterhaald; die status hierboven beschrijft
+alleen de eerste laptopproef van 22-08.
+
+De ruwe uitvoer van deze aanvullende run staat niet in de publieke clone. Dit is daarom een
+gedateerde, aan Luc herleidbare meetconclusie, geen bewijs dat een lezer uit deze repository
+zelf kan controleren. Voor uitrol moet ITOps dezelfde automatische en handmatige route na
+Intune-uitrol op een tweede developer-laptop herhalen en de bewijsmatrix bewaren.
+
+### OQ-6 opgelost: interactieve Read-goedkeuring is geaccepteerd, 23-08-2026
+
+**ITOps accepteert dat de Read-tool alleen de expliciete paden in `permissions.deny`
+afdwingbaar blokkeert.** Paden daarbuiten kunnen interactief een goedkeuringsvraag geven;
+AC-23 blijft dit op iedere doellaptop handmatig controleren. Luc bevestigde op 23-08-2026
+dat hiervoor geen aanvullende blokkade of apart vrijgavebesluit nodig is en dat ITOps deze
+werking accepteert.
+
+Gevolg: OQ-6 is geen open vrijgavevoorwaarde meer. De inventarisatie uit OQ-1 blijft wel
+verplicht, omdat ieder werkelijk gevoelig pad expliciet in `permissions.deny` moet staan.
 
 ## Gemeten, 21-08-2026
 
@@ -205,10 +230,13 @@ Uit de grillingronde; de annotaties liggen op Lucs machine en zijn niet nodig om
 voeren.
 
 - Whitelisten, niet blacklisten.
-- Alle claims bewijzen door uit te voeren, zo dicht mogelijk op ZET's omgeving.
+- Alle claims bewijzen door uit te voeren, zo dicht mogelijk op de doelomgeving.
 - Admin Console valt af: Luc is Admin, geen Owner, en wil geen org-brede policy zetten.
 - ITOps rolt `managed-settings.json` al uit via Intune; daar hangt onze config in.
-- Repo's komen in `~/repos` in de distro, niet op `/mnt/c/`.
+- Repo's kwamen voor de eerste proef in `~/repos` in de distro, niet op `/mnt/c/`.
+  **Achterhaald voor uitrol op 22-08-2026:** echte workspaces worden per laptop uit
+  bevestigde intake gegenereerd; `~/repos` blijft alleen voor fixtures. Bron: Lucs correctie
+  na de eerste Windows-laptopproef en de Agentpoort in `HANDOFF.md`.
 - Voor de proef alleen Node als toolchain; uitbreiden gebeurt bij de implementatie.
 
 ## Wat ITOps nu heeft

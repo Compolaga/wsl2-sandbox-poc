@@ -9,8 +9,11 @@
 > eigen `settings.json`, zonder bwrap weigert Claude Code te starten, en het `cmd.exe`-gat
 > (AC-24) was dicht — met de voorwaardetest dat `cmd.exe` buiten de sandbox wél aanroepbaar
 > was. `~` resolvet in de distro naar de Linux-home, niet naar het Windows-profiel. Zie
-> [decisions.md](decisions.md) en `evidence/wsl2-dev-20260822-100200/`. Wat nog openstaat:
-> de Read-tool-laag (AC-04/08/18), want die vraagt een ingelogde Claude.
+> [decisions.md](decisions.md) en `evidence/wsl2-dev-20260822-100200/`. De Read-tool-laag
+> (AC-04/08/18) is daarna handmatig op een Windows-laptop geverifieerd; op 23-08-2026 waren
+> de automatische én handmatige route daar groen. Die aanvullende
+> ruwe uitvoer staat niet in deze publieke clone, dus ITOps moet de volledige route na
+> Intune-uitrol op een tweede laptop herhalen.
 >
 > Wat in `evidence/` staat aan zelftests toetst het testharnas zelf, niet de sandbox — let bij
 > het lezen op welk van de twee je voor je hebt.
@@ -25,9 +28,9 @@ Windows-policy zo dat hij ook geldt binnen WSL2.
 `bring-workspace.sh`, `inventaris.sh`, `teardown.sh`, `snapshot.ps1`,
 `rollback-policy.ps1`, `fixture.sh`, `run.sh`, `check-configs.sh`, `unlock.sh` en `config/`
 horen erbij),
-[README.md](README.md#handmatige-procedures) voor de vijf handmatige procedures, en OQ-6 uit
-[open-questions.md](open-questions.md) — die heb je nodig omdat hij bepaalt wat AC-23
-betekent. OQ-5 is opgelost via settings-keys; de procedure staat verderop. [decisions.md](decisions.md) is
+[VERIFICATIE.md](VERIFICATIE.md#handmatige-systeemcontroles) voor de vijf handmatige
+procedures, en [open-questions.md](open-questions.md) voor de grens die AC-23 controleert.
+OQ-5 en OQ-6 zijn opgelost; de gekozen werking staat daar. [decisions.md](decisions.md) is
 alleen achtergrond. Moet je WSL2 zelf nog uitrollen, begin dan bij
 [Bijlage A](#bijlage-a--wsl2-uitrollen-vanuit-intune).
 
@@ -108,19 +111,78 @@ Plaats **alleen** via:
 ```
 
 Dat script weigert zonder consent, zonder bevestigde intake, zonder gegenereerde payload,
-zonder geslaagde rode run, en weigert de statische template.
+zonder geslaagde rode run, en weigert de statische template. Direct vanuit een
+Windows-admin-PowerShell gebruik je uitsluitend het zojuist gemaakte manifest:
+
+```powershell
+.\place-policy.ps1 -Manifest <pad-naar-repo>\local\placement-manifest.json
+```
+
+`local/placement-manifest.json` bindt de intake, payload, beginstaat, snapshot,
+rollback-roundtrip en rode nulmeting met SHA-256 aan elkaar. `place-policy.ps1` accepteert
+geen losse payload via `-Source` en laat de volledige poort in WSL opnieuw controleren.
+De adapters leggen `placement-started` en `policy-placed` append-only vast in
+`local/trial-lifecycle.jsonl`. Bekijk hervatstatus en veilige volgende stap met:
+
+```bash
+python3 tools/trial_lifecycle.py status
+python3 tools/trial_lifecycle.py verify
+```
+
+Een gemanipuleerd journal, gewijzigd bewijs of een onderbroken plaatsing blokkeert de
+volgende fase. Het journal voert zelf geen installatie, rollback of cleanup uit.
 
 ### Einde van de run
 
 `./run.sh` schrijft `evidence/<stempel>/proof-matrix.md` en toont die tabel. Zeg niet
-"de sandbox houdt" als een vrijgaverij nog open is. Wat altijd nog open is na één laptop:
+"de sandbox houdt" als een vrijgaverij nog open is. Wat na één laptop nog open kan staan:
 
 - AC-16 als die niet is gedraaid;
-- AC-23 (interactieve Read-goedkeuring);
-- de twaalf controles in VERIFICATIE.md als die zijn overgeslagen;
-- een **tweede developer-laptop**, niet de machine van deze run.
+- AC-23 als de interactieve Read-controle niet is uitgevoerd;
+- de twaalf controles in VERIFICATIE.md als die zijn overgeslagen.
 
-Pas die tweede laptop, plus OQ-1 en OQ-6, maakt dit uitrolklaar. Eén groene `run.sh` is dat niet.
+Wat na één laptop altijd nog openstaat: een **tweede developer-laptop**, niet de machine van
+deze run. Pas die tweede laptop plus OQ-1 maakt dit uitrolklaar. Eén groene
+`run.sh` is dat niet; de complete poort staat in
+[VERIFICATIE.md](VERIFICATIE.md#vrijgave-na-intune-uitrol).
+
+## Uitvoerfasen
+
+**Voer de proef in drie fasen uit; begin altijd bij de Agentpoort hierboven.** De statische
+configs zijn test- en referentiemateriaal. De Windows-payload voor een echte proef wordt uit
+de bevestigde workspace-intake gegenereerd.
+
+| Fase | Configuratie | Klaar wanneer |
+|---|---|---|
+| 1 — lokale settings | `config/settings.slice1.json` → `~/.claude/settings.json` | nulmeting plus AC-01 t/m AC-10, AC-17 t/m AC-20 en AC-22 |
+| 2 — managed in distro | `config/managed-settings.linux.json` → `/etc/claude-code/managed-settings.json` | fase 1 plus AC-11 t/m AC-13 |
+| 3 — Windows/Intune-route | gegenereerde payload → `C:\Program Files\ClaudeCode\managed-settings.json`, zonder distro-bestand | volledige automatische en handmatige verificatie, inclusief AC-14 t/m AC-16, AC-21 en de tweede laptop |
+
+`run.sh` print bovenaan welke tests op de huidige machine worden verwacht. Op WSL2 komt
+AC-24 erbij; als `cmd.exe` buiten de sandbox niet aanroepbaar is, is die meting ongeldig en
+verschijnt AC-24p in het bewijs.
+
+De belangrijkste repo-commando's:
+
+```bash
+./fixture.sh          # testfixtures neerzetten
+./fixture.sh --clean  # alleen testfixtures opruimen; geen volledige teardown
+./run.sh --red        # verplichte nulmeting zonder actieve policy
+./run.sh              # automatische suite tegen de actieve policy
+./run.sh AC-04        # één test; zwakker dan de volledige route
+./check-configs.sh    # de drie referentieconfigs onderling vergelijken
+./check-configs.sh /pad/naar/payload.json
+./selftest.sh         # beoordelingslogica van het harnas, geen policybewijs
+./check-configs.sh --selftest
+```
+
+Zonder `local/consent.json` en een bevestigde `local/policy-input.json` weigeren
+`install-prereqs.sh`, `generate-policy.sh`, `place-policy.sh` en een groene `run.sh` verder
+te gaan. `~/repos` blijft alleen als fixturepad bestaan en is geen organisatiekeuze.
+
+De nulmeting hoort vóór fase 1, op een machine zonder actieve policy. Vanaf fase 2 heeft
+`run.sh --red` geen betekenis meer: managed settings verdwijnen niet zonder root, en juist
+die onveranderlijkheid wordt in AC-11 t/m AC-13 getoetst.
 
 ---
 
@@ -163,8 +225,9 @@ proef.** Dat is geen aanbeveling.
    .\rollback-roundtrip.ps1
    ```
 
-   Kopieer de marker naar `local/rollback-roundtrip.ok`. Pas daarna de marker voor het
-   echte bestand:
+   Het script kopieert de marker zelf naar `local/rollback-roundtrip.ok` en registreert
+   `rollback-route-tested` in het lifecycle-journal. Ga pas daarna door met de marker voor
+   het echte bestand:
 
    ```powershell
    $p = "$env:ProgramFiles\ClaudeCode\managed-settings.json"
@@ -221,7 +284,8 @@ proef.** Dat is geen aanbeveling.
 5. **Plaats de gegenereerde payload** met `./place-policy.sh` (Windows-admin / UAC). Zorg dat
    `/etc/claude-code/managed-settings.json` niet óók bestaat, draai `wsl --shutdown` en open
    de distro opnieuw. De statische `config/managed-settings.windows.json` is geen plaatsbare
-   bron.
+   bron. Het script maakt en verifieert eerst `local/placement-manifest.json`; ook de
+   directe PowerShell-route accepteert alleen dat manifest.
 
 6. **Volg [VERIFICATIE.md](VERIFICATIE.md).** Dat is de korte hoofdroute en gebruikt
    `fixture.sh` met botsingscontrole en marker-gebaseerde cleanup. Draai daarna desgewenst
@@ -232,13 +296,52 @@ proef.** Dat is geen aanbeveling.
 7. **Lees de bewijsmatrix** die `run.sh` naar `evidence/<stempel>/proof-matrix.md` schrijft.
    Draai bij elk onverwacht effect eerst terug. Test daarna AC-14, AC-15/16, AC-21 en AC-23.
    Deze laptopproef is geen vrijgave voor de vloot: daarvoor moet dezelfde matrix groen zijn
-   op een **tweede developer-laptop**, plus OQ-1, OQ-6, proxy/package-feeds en de overige
+   op een **tweede developer-laptop**, plus OQ-1, proxy/package-feeds en de overige
    aannames.
+
+   Bind na een volledige groene run het gestructureerde runbewijs aan de lifecycle:
+
+   ```bash
+   python3 tools/trial_lifecycle.py record verification-recorded \
+     --evidence evidence/<stempel>/run.json
+   ```
+
+   Handmatige controles blijven daarnaast hun eigen bewijs uit VERIFICATIE.md vereisen.
 
 8. **Draai `./teardown.sh`.** Dat script kopieert eerst `evidence/` de clone uit, weigert
    verder te gaan zolang de policy nog een sandbox eist, en ruimt daarna alleen de fixture
    op. De rest staat in **Terugdraaien**. Zeg niet dat er is opgeruimd tot een tweede paar
    ogen de beginstaat ernaast heeft gelegd.
+
+## Veiligheidsvangnetten en andere testomgevingen
+
+**Plaats de brede configs alleen in een VM of op een aparte testlaptop.** Ze zetten vrijwel
+de hele Linux-home en `/mnt/` dicht, met alleen bevestigde workspaces en fixtures open.
+Regel vóór plaatsing een Windows-adminrollback én een WSL-snapshot. Zonder snapshot: geen
+proef.
+
+Drie technische vangnetten blijven aanvullend gelden:
+
+1. `run.sh` weigert een brede `denyRead` buiten een VM; alleen een bewuste testrun zet
+   `SANDBOX_VM=1`.
+2. `config/managed-settings.macos-test.json` is de smalle Mac-variant. Draai na plaatsing
+   eerst `./run.sh AC-20`; rood betekent direct `./unlock.sh`. Deze variant heeft bewust
+   geen netwerkblok, zodat de lokale annotatiebridge op `127.0.0.1:8791` bereikbaar blijft.
+   OQ-8 in
+   [open-questions.md](open-questions.md#oq-8--een-lege-managed-allowread-met-de-lock-aan)
+   legt uit waarom.
+3. `./unlock.sh` verwijdert distro- of Mac-managed settings met een backup ernaast. Draai
+   het in een gewone terminal, niet vanuit Claude Code. Het kan de Windows-policy niet
+   verwijderen; gebruik daarvoor `rollback-policy.ps1`.
+
+Op macOS dekt de proef alleen de lokale settings- en managed-settingslagen. Bubblewrap,
+`/mnt/c`, `wslInheritsWindowsSettings`, AC-14/15/16 en het `cmd.exe`-gat vragen echte WSL2.
+Colima of Docker kan de bubblewrap-laag geïsoleerd meten, maar vervangt de Windows-route
+niet.
+
+Gebruik je de Azure-route onder `testomgeving/`, kopieer dan eerst het bewijs lokaal en
+verwijder daarna de wegwerpresourcegroep met `./testomgeving/azure-wsl2-vm.sh weg`. De VM
+blijft kosten zolang de resourcegroep bestaat.
 
 ## Stap 0 — controleer eerst of de aannames kloppen
 
@@ -341,12 +444,21 @@ Dat toetst of de lock-keys (`failIfUnavailable`, `allowUnsandboxedCommands`,
 beschermd pad op beide lagen staat. Juist bij het samenvoegen met je bestaande bestand
 sneuvelen die het makkelijkst, en AC-11 t/m AC-14 leunen er volledig op.
 
+Zonder pad vergelijkt `check-configs.sh` de drie referentieconfigs onderling: padlijsten en
+lock-keys moeten gelijk blijven. Met een pad controleert hij één concrete payload tegen het
+`_beschermd`-blok. Voeg een beschermd pad daarom via `_beschermd` en beide leeslagen toe;
+een pad dat alleen in de actieve testconfig staat kan groen testen en toch in de
+Windows-payload ontbreken.
+
 ---
 
 ## Stap 2 — wat je uitrolt
 
-Merge [`config/managed-settings.windows.json`](config/managed-settings.windows.json) in het
-bestand dat je al uitrolt naar `C:\Program Files\ClaudeCode\managed-settings.json`.
+Merge de door `generate-policy.sh` gemaakte
+`local/managed-settings.windows.generated.json` in het bestand dat je al uitrolt naar
+`C:\Program Files\ClaudeCode\managed-settings.json`. Gebruik
+[`config/managed-settings.windows.json`](config/managed-settings.windows.json) alleen als
+referentie en testfixture; `place-policy.sh` weigert die statische template.
 **Mergen, niet vervangen** — je bestaande `permissions.deny`, `cleanupPeriodDays` en
 `allowManagedPermissionRulesOnly` blijven staan.
 
@@ -413,19 +525,11 @@ Windows-profiel en testbestanden onder `~/probe-a`, `~/probe-b` en
 verwijdert alleen wat hij zelf plantte. Lege mappen, `~/repos`, de clone, `~/.claude/`-groei
 en een OAuth-token blijven staan.
 
-Daarnaast vijf controles met de hand, omdat ze admin of een destructieve stap vragen — de
-procedures staan in [README.md](README.md#handmatige-procedures):
-
-- `bwrap` weghalen en zien dat Claude Code weigert te starten
-- de policy actief zien worden in WSL met alleen het Windows-bestand
-- en zonder `wslInheritsWindowsSettings` zien dat hij dat niet is
-- `claude mcp list` draaien in de distro
-- vaststellen wat de Read-laag níét dekt (AC-23, zie OQ-6)
-
-De vierde controle toetst de inmiddels gekozen route: `allowedMcpServers` en
-`allowManagedMcpServersOnly` staan in managed settings en reizen dus mee met
-`wslInheritsWindowsSettings`. `managed-mcp.json` hoeft niet mee de distro in. Zie de
-oplossing bij OQ-5 in [open-questions.md](open-questions.md).
+Voer daarnaast de vijf
+[handmatige systeemcontroles](VERIFICATIE.md#handmatige-systeemcontroles) uit. Daar staan de
+verwachte uitkomsten voor `bwrap`, de Windows-policy met negatieve controle, managed MCP en
+de grens van de Read-laag. De procedure en de vrijgavepoort hebben bewust één eigenaar:
+`VERIFICATIE.md`.
 
 ## Terugdraaien
 
@@ -444,7 +548,10 @@ per ongeluk permanent.
    weggeklikte UAC. Plaatsen gebeurt als je oplet; terugdraaien aan het eind, als iedereen
    denkt dat het klaar is.
 2. `wsl --shutdown`, distro opnieuw openen, **controleer dat `claude --version` weer werkt**.
-   Pas daarna mag er een pakket weg.
+   Pas daarna mag er een pakket weg. `rollback-policy.ps1` kopieert zijn voltooide log naar
+   `local/rollback.log`; `teardown.sh` legt de runtimecontrole vast en vraagt vervolgens
+   `tools/trial_lifecycle.py plan cleanup`. Een onvoltooide rollback of ontbrekend bewijs
+   houdt die poort dicht.
 3. Bewijs de clone uit: `./teardown.sh` doet dat als eerste. `evidence/` bevat lokale paden;
    niet naar een publieke repo.
 4. Fixture weg (`./fixture.sh --clean` — zit in `teardown.sh`).
